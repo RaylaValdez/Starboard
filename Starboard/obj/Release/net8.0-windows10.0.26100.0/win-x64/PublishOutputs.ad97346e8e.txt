@@ -1,0 +1,3 @@
+C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Publish\Starboard.pdb
+C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Publish\cimgui.dll
+C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Publish\Starboard.exe

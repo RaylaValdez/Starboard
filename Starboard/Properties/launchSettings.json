@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Starboard": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

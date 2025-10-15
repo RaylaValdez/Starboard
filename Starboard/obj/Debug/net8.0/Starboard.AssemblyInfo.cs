@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Starboard")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+aa75835ba306762d60ee22b583dfdac3655e27b2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+40692f87c2046ad0fae1e07451d77537a283465e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Starboard")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Starboard")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

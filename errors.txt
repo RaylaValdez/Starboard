@@ -1,0 +1,311 @@
+﻿Severity	Code	Description	Project	File	Line	Column	Category	Details
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	7	14	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	7	1	Compiler	
+Error (active)	CS1520	Method must have a return type	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	7	16	Compiler	
+Error (active)	CS0501	'<invalid-global-code>.<invalid-global-code>(_dxgiDevice)' must declare a body because it is not marked abstract, extern, or partial	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	7	16	Compiler	
+Error (active)	CS0246	The type or namespace name '_dxgiDevice' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	7	41	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	7	52	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	1	Compiler	
+Error (active)	IDE1007	The name '_dcompTarget' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	14	Compiler	
+Error (active)	IDE1007	The name '_dcompDevice.CreateTargetForHwnd' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	16	Compiler	
+Error (active)	IDE1007	The name '_dcompDevice' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	16	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	29	Compiler	
+Error (active)	IDE1007	The name 'CreateTargetForHwnd' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	29	Compiler	
+Error (active)	IDE1007	The name '_hwnd' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	49	Compiler	
+Error (active)	CS1031	Type expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	56	Compiler	
+Error (active)	CS1026	) expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	56	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	8	56	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	1	Compiler	
+Error (active)	IDE1007	The name '_dcompVisual' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	14	Compiler	
+Error (active)	IDE1007	The name '_dcompDevice.CreateVisual' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	16	Compiler	
+Error (active)	IDE1007	The name '_dcompDevice' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	16	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	29	Compiler	
+Error (active)	IDE1007	The name 'CreateVisual' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	29	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	42	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	9	43	Compiler	
+Error (active)	IDE1007	The name '_dcompVisual.SetContent' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	1	Compiler	
+Error (active)	IDE1007	The name '_dcompVisual' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	14	Compiler	
+Error (active)	IDE1007	The name 'SetContent' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	14	Compiler	
+Error (active)	IDE1007	The name 'SwapChain' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	25	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	34	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	10	35	Compiler	
+Error (active)	IDE1007	The name '_dcompTarget.SetRoot' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	1	Compiler	
+Error (active)	IDE1007	The name '_dcompTarget' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	14	Compiler	
+Error (active)	IDE1007	The name 'SetRoot' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	14	Compiler	
+Error (active)	IDE1007	The name '_dcompVisual' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	22	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	34	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	11	35	Compiler	
+Error (active)	IDE1007	The name '_dcompDevice.Commit' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	12	1	Compiler	
+Error (active)	IDE1007	The name '_dcompDevice' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	12	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	12	14	Compiler	
+Error (active)	IDE1007	The name 'Commit' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	12	14	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	12	21	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	12	22	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	13	1	Compiler	
+Error (active)	CS8803	Top-level statements must precede namespace and type declarations.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	16	1	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	16	1	Compiler	
+Error (active)	CS8802	Only one compilation unit can have top-level statements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	16	1	Compiler	
+Error (active)	CS0103	The name 'SwapChain' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	19	28	Compiler	
+Error (active)	CS0103	The name 'Device' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	20	21	Compiler	
+Error (active)	CS0103	The name 'Context' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	22	5	Compiler	
+Error (active)	CS0103	The name 'Context' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	23	5	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	27	1	Compiler	
+Error (active)	CS0103	The name 'SwapChain' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	29	5	Compiler	
+Error (active)	CS0103	The name '_dcompDevice' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	30	5	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	34	1	Compiler	
+Error (active)	CS0103	The name '_dcompVisual' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	36	5	Compiler	
+Error (active)	CS0103	The name '_dcompTarget' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	37	5	Compiler	
+Error (active)	CS0103	The name '_dcompDevice' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	38	5	Compiler	
+Error (active)	CS0103	The name 'SwapChain' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	39	5	Compiler	
+Error (active)	CS0103	The name '_dxgiFactory' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	40	5	Compiler	
+Error (active)	CS0103	The name '_dxgiAdapter' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	41	5	Compiler	
+Error (active)	CS0103	The name '_dxgiDevice' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	42	5	Compiler	
+Error (active)	CS0103	The name 'Context' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	43	5	Compiler	
+Error (active)	CS0103	The name 'Device' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	44	5	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\D3DHost.cs	46	1	Compiler	
+Error (active)	CS1002	; expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	11	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	11	Compiler	
+Error (active)	IDE1007	The name 'vsBlob' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	11	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	18	Compiler	
+Error (active)	IDE1007	The name 'Vortice.D3DCompiler.D3DCompiler.Compile' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	20	Compiler	
+Error (active)	IDE1007	The name 'Vortice.D3DCompiler.D3DCompiler' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	20	Compiler	
+Error (active)	IDE1007	The name 'D3DCompiler' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	40	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	52	Compiler	
+Error (active)	IDE1007	The name 'Compile' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	52	Compiler	
+Error (active)	IDE1007	The name 'vsSrc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	60	Compiler	
+Error (active)	CS1031	Type expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	67	Compiler	
+Error (active)	CS1026	) expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	67	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	8	67	Compiler	
+Error (active)	CS1002	; expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	11	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	11	Compiler	
+Error (active)	IDE1007	The name 'psBlob' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	11	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	18	Compiler	
+Error (active)	IDE1007	The name 'Vortice.D3DCompiler.D3DCompiler.Compile' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	20	Compiler	
+Error (active)	IDE1007	The name 'Vortice.D3DCompiler.D3DCompiler' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	20	Compiler	
+Error (active)	IDE1007	The name 'D3DCompiler' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	40	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	52	Compiler	
+Error (active)	IDE1007	The name 'Compile' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	52	Compiler	
+Error (active)	IDE1007	The name 'psSrc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	60	Compiler	
+Error (active)	CS1031	Type expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	67	Compiler	
+Error (active)	CS1026	) expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	67	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	9	67	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	1	Compiler	
+Error (active)	IDE1007	The name '_vs' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	5	Compiler	
+Error (active)	IDE1007	The name '_device.CreateVertexShader' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	7	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	7	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	15	Compiler	
+Error (active)	IDE1007	The name 'CreateVertexShader' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	15	Compiler	
+Error (active)	IDE1007	The name 'vsBlob' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	34	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	40	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	10	41	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	1	Compiler	
+Error (active)	IDE1007	The name '_ps' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	5	Compiler	
+Error (active)	IDE1007	The name '_device.CreatePixelShader' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	7	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	7	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	15	Compiler	
+Error (active)	IDE1007	The name 'CreatePixelShader' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	15	Compiler	
+Error (active)	IDE1007	The name 'psBlob' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	33	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	39	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	11	40	Compiler	
+Error (active)	CS0825	The contextual keyword 'var' may only appear within a local variable declaration or in script code	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	14	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	14	5	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	1	Compiler	
+Error (active)	IDE1007	The name '_layout' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	9	Compiler	
+Error (active)	IDE1007	The name '_device.CreateInputLayout' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	11	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	11	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	19	Compiler	
+Error (active)	IDE1007	The name 'CreateInputLayout' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	19	Compiler	
+Error (active)	IDE1007	The name 'elements' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	37	Compiler	
+Error (active)	IDE1007	The name 'vsBlob' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	47	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	53	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	20	54	Compiler	
+Error (active)	CS0825	The contextual keyword 'var' may only appear within a local variable declaration or in script code	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	24	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	24	5	Compiler	
+Error (active)	CS0117	'SamplerDescription' does not contain a definition for 'ComparisonFunction'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	30	5	Compiler	
+Error (active)	CS0305	Using the generic type 'Comparison<T>' requires 1 type arguments	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	30	26	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	1	Compiler	
+Error (active)	IDE1007	The name '_fontSampler' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	14	Compiler	
+Error (active)	IDE1007	The name '_device.CreateSamplerState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	16	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	16	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	24	Compiler	
+Error (active)	IDE1007	The name 'CreateSamplerState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	24	Compiler	
+Error (active)	IDE1007	The name 'samplerDesc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	43	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	54	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	34	55	Compiler	
+Error (active)	CS0825	The contextual keyword 'var' may only appear within a local variable declaration or in script code	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	37	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	37	5	Compiler	
+Error (active)	IDE1007	The name 'blendDesc.RenderTarget' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	1	Compiler	
+Error (active)	IDE1007	The name 'blendDesc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	1	Compiler	
+Error (active)	IDE1007	The name 'RenderTarget' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	11	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	25	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	27	Compiler	
+Error (active)	CS0106	The modifier 'new' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	33	Compiler	
+Error (active)	CS1520	Method must have a return type	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	33	Compiler	
+Error (active)	CS1041	Identifier expected; 'true' is a keyword	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	62	Compiler	
+Error (active)	CS1031	Type expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	66	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	66	Compiler	
+Error (active)	CS0426	The type name 'SourceAlpha' does not exist in the type 'Blend'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	74	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	85	Compiler	
+Error (active)	CS0426	The type name 'InverseSourceAlpha' does not exist in the type 'Blend'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	93	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	111	Compiler	
+Error (active)	CS0426	The type name 'OperationAdd' does not exist in the type 'Blend'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	119	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	131	Compiler	
+Error (active)	CS0426	The type name 'One' does not exist in the type 'Blend'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	139	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	142	Compiler	
+Error (active)	CS0426	The type name 'InverseSourceAlpha' does not exist in the type 'Blend'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	150	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	168	Compiler	
+Error (active)	CS0426	The type name 'OperationAdd' does not exist in the type 'Blend'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	176	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	188	Compiler	
+Error (active)	CS0426	The type name 'All' does not exist in the type 'ColorWriteEnable'	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	207	Compiler	
+Error (active)	CS1001	Identifier expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	42	210	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	1	Compiler	
+Error (active)	IDE1007	The name '_blendState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	13	Compiler	
+Error (active)	IDE1007	The name '_device.CreateBlendState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	15	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	15	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	23	Compiler	
+Error (active)	IDE1007	The name 'CreateBlendState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	23	Compiler	
+Error (active)	IDE1007	The name 'blendDesc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	40	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	49	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	43	50	Compiler	
+Error (active)	CS0825	The contextual keyword 'var' may only appear within a local variable declaration or in script code	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	46	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	46	5	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	1	Compiler	
+Error (active)	IDE1007	The name '_rasterizerState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	18	Compiler	
+Error (active)	IDE1007	The name '_device.CreateRasterizerState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	20	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	20	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	28	Compiler	
+Error (active)	IDE1007	The name 'CreateRasterizerState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	28	Compiler	
+Error (active)	IDE1007	The name 'rasterDesc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	50	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	60	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	51	61	Compiler	
+Error (active)	CS0825	The contextual keyword 'var' may only appear within a local variable declaration or in script code	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	54	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	54	5	Compiler	
+Error (active)	CS0305	Using the generic type 'Comparison<T>' requires 1 type arguments	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	54	72	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	1	Compiler	
+Error (active)	IDE1007	The name '_depthState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	13	Compiler	
+Error (active)	IDE1007	The name '_device.CreateDepthStencilState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	15	Compiler	
+Error (active)	IDE1007	The name '_device' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	15	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	23	Compiler	
+Error (active)	IDE1007	The name 'CreateDepthStencilState' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	23	Compiler	
+Error (active)	IDE1007	The name 'depthDesc' does not exist in the current context.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	47	Compiler	
+Error (active)	CS8124	Tuple must contain at least two elements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	56	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	55	57	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	56	1	Compiler	
+Error (active)	CS8803	Top-level statements must precede namespace and type declarations.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	59	1	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	59	1	Compiler	
+Error (active)	CS8802	Only one compilation unit can have top-level statements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	59	1	Compiler	
+Error (active)	CS0103	The name '_depthState' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	61	5	Compiler	
+Error (active)	CS0103	The name '_rasterizerState' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	62	5	Compiler	
+Error (active)	CS0103	The name '_blendState' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	63	5	Compiler	
+Error (active)	CS0103	The name '_fontSampler' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	64	5	Compiler	
+Error (active)	CS0103	The name '_fontSRV' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	65	5	Compiler	
+Error (active)	CS0103	The name '_layout' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	66	5	Compiler	
+Error (active)	CS0103	The name '_ps' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	67	5	Compiler	
+Error (active)	CS0103	The name '_vs' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	68	5	Compiler	
+Error (active)	CS0103	The name '_indexBuffer' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	69	5	Compiler	
+Error (active)	CS0103	The name '_vertexBuffer' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	70	5	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\ImGuiRendererD3D11.cs	73	1	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	4	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	4	9	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	5	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	5	9	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	5	11	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	5	24	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	6	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	6	10	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	6	17	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	6	21	Compiler	
+Error (active)	CS0116	A namespace cannot directly contain members such as fields, methods or statements	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	7	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	7	24	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	8	1	Compiler	
+Error (active)	CS8803	Top-level statements must precede namespace and type declarations.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	8	2	Compiler	
+Error (active)	CS8802	Only one compilation unit can have top-level statements.	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	8	2	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	9	1	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	9	35	Compiler	
+Error (active)	CS0103	The name 'bb' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	9	41	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	10	1	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	13	1	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	13	20	Compiler	
+Error (active)	CS0103	The name 'SHOW_WINDOW_CMD' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	13	26	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	14	1	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	14	22	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	15	1	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	18	1	Compiler	
+Error (active)	CS0103	The name '_clickThrough' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	20	5	Compiler	
+Error (active)	CS0103	The name '_clickThrough' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	20	22	Compiler	
+Error (active)	CS0246	The type or namespace name 'WINDOW_EX_STYLE' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	21	15	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	21	31	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	21	56	Compiler	
+Error (active)	CS0103	The name 'WINDOW_LONG_PTR_INDEX' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	21	62	Compiler	
+Error (active)	CS0103	The name '_clickThrough' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	22	9	Compiler	
+Error (active)	CS0103	The name 'WINDOW_EX_STYLE' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	23	15	Compiler	
+Error (active)	CS0103	The name 'WINDOW_EX_STYLE' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	23	51	Compiler	
+Error (active)	CS0103	The name 'WINDOW_EX_STYLE' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	25	17	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	26	5	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	26	30	Compiler	
+Error (active)	CS0103	The name 'WINDOW_LONG_PTR_INDEX' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	26	36	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	30	1	Compiler	
+Error (active)	CS0246	The type or namespace name 'RECT' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	30	26	Compiler	
+Error (active)	CS0103	The name 'ClientWidth' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	35	5	Compiler	
+Error (active)	CS0103	The name 'ClientHeight' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	36	5	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	37	5	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	37	26	Compiler	
+Error (active)	CS0246	The type or namespace name 'HWND' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	37	36	Compiler	
+Error (active)	CS0103	The name 'SET_WINDOW_POS_FLAGS' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	38	5	Compiler	
+Error (active)	CS0103	The name 'SET_WINDOW_POS_FLAGS' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	38	41	Compiler	
+Error (active)	CS0103	The name 'SET_WINDOW_POS_FLAGS' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	38	79	Compiler	
+Error (active)	CS0106	The modifier 'private' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	42	1	Compiler	
+Error (active)	CS0246	The type or namespace name 'LRESULT' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	42	9	Compiler	
+Error (active)	CS0246	The type or namespace name 'HWND' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	42	25	Compiler	
+Error (active)	CS0246	The type or namespace name 'WPARAM' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	42	46	Compiler	
+Error (active)	CS0246	The type or namespace name 'LPARAM' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	42	61	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	46	14	Compiler	
+Error (active)	CS0103	The name '_clickThrough' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	48	17	Compiler	
+Error (active)	CS0246	The type or namespace name 'LRESULT' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	48	40	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	50	14	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	51	13	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	54	12	Compiler	
+Error (active)	CS0106	The modifier 'public' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	58	1	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	60	9	Compiler	
+Error (active)	CS0103	The name 'HWND' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	60	17	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	60	28	Compiler	
+Error (active)	CS0103	The name 'Hwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	60	50	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\OverlayWindow.cs	62	1	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	3	14	Compiler	
+Error (active)	CS0103	The name '_scHwnd' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	3	31	Compiler	
+Error (active)	CS0103	The name 'rc' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	5	Compiler	
+Error (active)	CS0103	The name 'last' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	16	Compiler	
+Error (active)	CS0103	The name 'rc' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	29	Compiler	
+Error (active)	CS0103	The name 'last' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	39	Compiler	
+Error (active)	CS0103	The name 'rc' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	51	Compiler	
+Error (active)	CS0103	The name 'last' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	63	Compiler	
+Error (active)	CS0103	The name 'rc' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	77	Compiler	
+Error (active)	CS0103	The name 'last' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	4	90	Compiler	
+Error (active)	CS0103	The name 'overlay' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	6	5	Compiler	
+Error (active)	CS0103	The name 'rc' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	6	26	Compiler	
+Error (active)	CS0103	The name 'last' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	7	5	Compiler	
+Error (active)	CS0103	The name 'rc' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	7	12	Compiler	
+Error (active)	CS0103	The name 'lastMin' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	9	14	Compiler	
+Error (active)	CS0103	The name 'overlay' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	11	5	Compiler	
+Error (active)	CS0103	The name 'lastMin' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	12	5	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	15	1	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	16	1	Compiler	
+Error (active)	CS0106	The modifier 'private' is not valid for this item	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	19	1	Compiler	
+Error (active)	CS0246	The type or namespace name 'HWND' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	19	50	Compiler	
+Error (active)	CS0103	The name 'HWND' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	21	12	Compiler	
+Error (active)	CS0103	The name 'PInvoke' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	23	5	Compiler	
+Error (active)	CS0246	The type or namespace name 'WNDENUMPROC' could not be found (are you missing a using directive or an assembly reference?)	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	23	29	Compiler	
+Error (active)	CS0103	The name 'LPARAM' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	36	9	Compiler	
+Error (active)	CS0103	The name 'HWND' does not exist in the current context	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	37	20	Compiler	
+Error (active)	CS1022	Type or namespace definition, or end-of-file expected	Starboard	C:\Users\Rayla\Documents\Visual Studio Projects\Starboard\Starboard\Program.cs	39	1	Compiler	
