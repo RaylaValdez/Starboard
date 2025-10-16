@@ -28,6 +28,8 @@ internal sealed class OverlayWindow : IDisposable
 
     public readonly HWND Hwnd;
 
+
+
     public int ClientWidth { get; private set; } = DefaultClientWidth;
     public int ClientHeight { get; private set; } = DefaultClientHeight;
 
@@ -40,7 +42,7 @@ internal sealed class OverlayWindow : IDisposable
             PInvoke.ShowWindow(Hwnd, value ? SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE : SHOW_WINDOW_CMD.SW_HIDE);
         }
     }
-    private bool _isVisible = true;
+    private bool _isVisible = false;
     private bool _isClickThrough = true;
 
     public OverlayWindow(string title, HWND owner)
@@ -99,7 +101,7 @@ internal sealed class OverlayWindow : IDisposable
             PInvoke.DwmEnableBlurBehindWindow(Hwnd, blurBehind);
         }
 
-        PInvoke.ShowWindow(Hwnd, SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE);
+        PInvoke.ShowWindow(Hwnd, SHOW_WINDOW_CMD.SW_HIDE);
         PInvoke.UpdateWindow(Hwnd);
     }
 
@@ -140,7 +142,7 @@ internal sealed class OverlayWindow : IDisposable
         ClientHeight = Math.Max(1, height);
 
         PInvoke.SetWindowPos(Hwnd, HWND.Null, screenRect.left, screenRect.top, width, height,
-            SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_SHOWWINDOW);
+            SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOSENDCHANGING);       
     }
 
     private LRESULT WndProc(HWND hwnd, uint msg, WPARAM wParam, LPARAM lParam)
