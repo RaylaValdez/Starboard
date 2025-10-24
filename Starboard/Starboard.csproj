@@ -44,7 +44,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Icons\cassiopia.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Templates\mobiglass_logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

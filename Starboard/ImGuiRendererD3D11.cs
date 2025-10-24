@@ -1,54 +1,53 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using ImGuiNET;
+using Vortice.D3DCompiler;
+using Vortice.Direct3D;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
 using Vortice.Mathematics;
-using Vortice.Direct3D;
-using Vortice.D3DCompiler;
 
 namespace Starboard;
 
-/// <summary>
-/// Minimal ImGui renderer for Direct3D11. 
-/// - Creates device objects (shaders, input layout, sampler, blend/raster/depth states).
-/// - Uploads ImGui's font atlas to a shader resource view.
-/// - On Render(): copies ImGui draw lists into dynamic buffers and draws them.
-/// </summary>
 internal sealed class ImGuiRendererD3D11 : IDisposable
 {
-    // --- Constants / "magic numbers" ---
     private const int InitialVertexCapacity = 5000;
     private const int InitialIndexCapacity = 10000;
     private const float BufferGrowthFactor = 1.5f;
     private const uint ConstantBufferBindSlot = 0;
     private const uint ImGuiFontTextureId = 1;
-    private const float SecondaryDeltaTime = 1.0f / 240.0f; // kept for parity with original Math.Max usage
-    private const float MinimumDeltaTime = 1.0f / 120.0f;   // effective result of Math.Max(MinimumDeltaTime, SecondaryDeltaTime)
+    private const float SecondaryDeltaTime = 1.0f / 240.0f;
+    private const float MinimumDeltaTime = 1.0f / 120.0f;
 
     private readonly ID3D11Device _device;
-    private readonly ID3D11DeviceContext _deviceContext;
+    private readonly ID3D11DeviceContext _ctx;
 
-    private ID3D11Buffer _vertexBuffer;
-    private ID3D11Buffer _indexBuffer;
-    private int _vertexBufferCapacity = InitialVertexCapacity;
-    private int _indexBufferCapacity = InitialIndexCapacity;
+    private ID3D11Buffer _vb, _ib;
+    private int _vbCap = InitialVertexCapacity, _ibCap = InitialIndexCapacity;
 
-    private ID3D11VertexShader _vertexShader;
-    private ID3D11PixelShader _pixelShader;
-    private ID3D11InputLayout _inputLayout;
-    private ID3D11SamplerState _fontSampler;
-    private ID3D11ShaderResourceView _fontTextureView;
-    private ID3D11BlendState _blendState;
-    private ID3D11RasterizerState _rasterizerState;
-    private ID3D11DepthStencilState _depthState;
+    private ID3D11VertexShader _vs;
+    private ID3D11PixelShader _ps;
+    private ID3D11InputLayout _il;
+    private ID3D11SamplerState _sampler;
+    private ID3D11BlendState _blend;
+    private ID3D11RasterizerState _rast;
+    private ID3D11DepthStencilState _depth;
 
-    public ImGuiRendererD3D11(ID3D11Device device, ID3D11DeviceContext deviceContext)
+    private ID3D11ShaderResourceView _fontSRV;
+
+    private struct TexInfo { public ID3D11ShaderResourceView SRV; public int W; public int H; }
+    private readonly Dictionary<IntPtr, TexInfo> _textures = new();
+    private long _nextTexId = 2; // 1 is reserved for the font
+
+    public ImGuiRendererD3D11(ID3D11Device device, ID3D11DeviceContext ctx)
     {
         _device = device;
-        _deviceContext = deviceContext;
+        _ctx = ctx;
 
         ImGui.CreateContext();
         var io = ImGui.GetIO();
@@ -59,149 +58,125 @@ internal sealed class ImGuiRendererD3D11 : IDisposable
         CreateDeviceObjects();
     }
 
-    /// <summary>
-    /// Begin a new ImGui frame with the specified display size.
-    /// </summary>
-    public void NewFrame(int displayWidth, int displayHeight)
+    public void NewFrame(int displayW, int displayH)
     {
         var io = ImGui.GetIO();
-        io.DisplaySize = new Vector2(displayWidth, displayHeight);
-
-        // Keep original behavior: Math.Max(1/120, 1/240) → 1/120. Leaves timing decoupled from real frame time.
+        io.DisplaySize = new Vector2(displayW, displayH);
         io.DeltaTime = Math.Max(MinimumDeltaTime, SecondaryDeltaTime);
-
         ImGui.NewFrame();
     }
 
-    /// <summary>
-    /// Render ImGui into the provided swap chain's back buffer.
-    /// </summary>
     public void Render(IDXGISwapChain1 swapchain)
     {
         ImGui.Render();
-        var drawData = ImGui.GetDrawData();
-        if (drawData.CmdListsCount == 0) return;
+        var dd = ImGui.GetDrawData();
+        if (dd.CmdListsCount == 0) return;
 
-        // --- Ensure dynamic buffers are large enough (grow by BufferGrowthFactor if needed) ---
-        int totalVertexCount = drawData.TotalVtxCount;
-        int totalIndexCount = drawData.TotalIdxCount;
-
-        if (_vertexBuffer == null || _vertexBufferCapacity < totalVertexCount)
+        // ensure buffers
+        if (_vb == null || _vbCap < dd.TotalVtxCount)
         {
-            _vertexBuffer?.Dispose();
-            _vertexBufferCapacity = Math.Max(InitialVertexCapacity, (int)(totalVertexCount * BufferGrowthFactor));
-            _vertexBuffer = _device.CreateBuffer(new BufferDescription((uint)(_vertexBufferCapacity * Unsafe.SizeOf<ImDrawVert>()),
-                                                                      BindFlags.VertexBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
+            _vb?.Dispose();
+            _vbCap = Math.Max(InitialVertexCapacity, (int)(dd.TotalVtxCount * BufferGrowthFactor));
+            _vb = _device.CreateBuffer(new BufferDescription((uint)(_vbCap * Unsafe.SizeOf<ImDrawVert>()), BindFlags.VertexBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
+        }
+        if (_ib == null || _ibCap < dd.TotalIdxCount)
+        {
+            _ib?.Dispose();
+            _ibCap = Math.Max(InitialIndexCapacity, (int)(dd.TotalIdxCount * BufferGrowthFactor));
+            _ib = _device.CreateBuffer(new BufferDescription((uint)(_ibCap * sizeof(ushort)), BindFlags.IndexBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
         }
 
-        if (_indexBuffer == null || _indexBufferCapacity < totalIndexCount)
-        {
-            _indexBuffer?.Dispose();
-            _indexBufferCapacity = Math.Max(InitialIndexCapacity, (int)(totalIndexCount * BufferGrowthFactor));
-            _indexBuffer = _device.CreateBuffer(new BufferDescription((uint)(_indexBufferCapacity * sizeof(ushort)),
-                                                                      BindFlags.IndexBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
-        }
-
-        // --- Copy ImGui's CPU draw data into our dynamic GPU buffers ---
-        var mappedVertices = _deviceContext.Map(_vertexBuffer, 0, MapMode.WriteDiscard);
-        var mappedIndices = _deviceContext.Map(_indexBuffer, 0, MapMode.WriteDiscard);
+        // upload
+        var mv = _ctx.Map(_vb, 0, MapMode.WriteDiscard);
+        var mi = _ctx.Map(_ib, 0, MapMode.WriteDiscard);
         unsafe
         {
-            byte* vertexDst = (byte*)mappedVertices.DataPointer;
-            byte* indexDst = (byte*)mappedIndices.DataPointer;
+            byte* vdst = (byte*)mv.DataPointer;
+            byte* idst = (byte*)mi.DataPointer;
 
-            for (int listIndex = 0; listIndex < drawData.CmdListsCount; listIndex++)
+            for (int l = 0; l < dd.CmdListsCount; l++)
             {
-                ImDrawListPtr cmdList = drawData.CmdLists[listIndex];
+                var list = dd.CmdLists[l];
+                int vbytes = list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
+                int ibytes = list.IdxBuffer.Size * sizeof(ushort);
 
-                int vertexBytes = cmdList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
-                int indexBytes = cmdList.IdxBuffer.Size * sizeof(ushort);
+                Buffer.MemoryCopy((void*)list.VtxBuffer.Data, vdst, vbytes, vbytes);
+                vdst += vbytes;
 
-                Buffer.MemoryCopy((void*)cmdList.VtxBuffer.Data, vertexDst, vertexBytes, vertexBytes);
-                vertexDst += vertexBytes;
-
-                Buffer.MemoryCopy((void*)cmdList.IdxBuffer.Data, indexDst, indexBytes, indexBytes);
-                indexDst += indexBytes;
+                Buffer.MemoryCopy((void*)list.IdxBuffer.Data, idst, ibytes, ibytes);
+                idst += ibytes;
             }
         }
-        _deviceContext.Unmap(_vertexBuffer, 0);
-        _deviceContext.Unmap(_indexBuffer, 0);
+        _ctx.Unmap(_vb, 0);
+        _ctx.Unmap(_ib, 0);
 
-        // Define a viewport that exactly matches the ImGui draw data size.
-        // Without this, you'll often render into a 0x0 (or stale) viewport.
-        var viewport = new Viewport(0, 0, drawData.DisplaySize.X, drawData.DisplaySize.Y, 0.0f, 1.0f);
-        _deviceContext.RSSetViewports(new[] { viewport });
+        // viewport
+        var vp = new Viewport(0, 0, dd.DisplaySize.X, dd.DisplaySize.Y, 0, 1);
+        _ctx.RSSetViewports(new[] { vp });
 
-        using var backBuffer = swapchain.GetBuffer<ID3D11Texture2D>(0);
-        using var renderTargetView = _device.CreateRenderTargetView(backBuffer);
-        _deviceContext.OMSetRenderTargets(renderTargetView, null);
+        using var bb = swapchain.GetBuffer<ID3D11Texture2D>(0);
+        using var rtv = _device.CreateRenderTargetView(bb);
+        _ctx.OMSetRenderTargets(rtv, null);
 
-        // Orthographic projection that maps ImGui's pixel coordinates directly to NDC.
-        // Note the b/t order is flipped for Direct3D's clip space.
-        var drawPos = drawData.DisplayPos;
-        var drawSize = drawData.DisplaySize;
-        float left = drawPos.X;
-        float top = drawPos.Y;
-        float right = drawPos.X + drawSize.X;
-        float bottom = drawPos.Y + drawSize.Y;
-        var projection = Matrix4x4.CreateOrthographicOffCenter(left, right, bottom, top, -1.0f, 1.0f);
+        // ortho
+        var dp = dd.DisplayPos;
+        var ds = dd.DisplaySize;
+        var proj = Matrix4x4.CreateOrthographicOffCenter(dp.X, dp.X + ds.X, dp.Y + ds.Y, dp.Y, -1, 1);
 
-        _deviceContext.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
-        _deviceContext.IASetInputLayout(_inputLayout);
-        _deviceContext.VSSetShader(_vertexShader);
-        _deviceContext.PSSetShader(_pixelShader);
-        _deviceContext.PSSetSamplers(0, new[] { _fontSampler });
-        _deviceContext.PSSetShaderResource(0, _fontTextureView);
-        _deviceContext.OMSetBlendState(_blendState, new Color4(0, 0, 0, 0), 0xFFFFFFFF);
-        _deviceContext.RSSetState(_rasterizerState);
-        _deviceContext.OMSetDepthStencilState(_depthState, 0);
+        _ctx.IASetPrimitiveTopology(Vortice.Direct3D.PrimitiveTopology.TriangleList);
+        _ctx.IASetInputLayout(_il);
+        _ctx.VSSetShader(_vs);
+        _ctx.PSSetShader(_ps);
+        _ctx.PSSetSamplers(0, new[] { _sampler });
+        _ctx.OMSetBlendState(_blend, new Color4(0, 0, 0, 0), 0xFFFFFFFF);
+        _ctx.RSSetState(_rast);
+        _ctx.OMSetDepthStencilState(_depth, 0);
 
-        // Upload the projection matrix to a transient constant buffer.
-        using var constantBuffer = _device.CreateBuffer(new BufferDescription((uint)Unsafe.SizeOf<Matrix4x4>(),
-                                                                             BindFlags.ConstantBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
-        var mappedCB = _deviceContext.Map(constantBuffer, 0, MapMode.WriteDiscard);
-        unsafe { *(Matrix4x4*)mappedCB.DataPointer = projection; }
-        _deviceContext.Unmap(constantBuffer, 0);
-        _deviceContext.VSSetConstantBuffer(ConstantBufferBindSlot, constantBuffer);
+        using var cb = _device.CreateBuffer(new BufferDescription((uint)Unsafe.SizeOf<Matrix4x4>(), BindFlags.ConstantBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
+        var m = _ctx.Map(cb, 0, MapMode.WriteDiscard);
+        unsafe { *(Matrix4x4*)m.DataPointer = proj; }
+        _ctx.Unmap(cb, 0);
+        _ctx.VSSetConstantBuffer(ConstantBufferBindSlot, cb);
 
-        // Bind geometry and draw each command list with scissor rectangles.
-        int vertexStride = Unsafe.SizeOf<ImDrawVert>();
-        _deviceContext.IASetVertexBuffer(0, _vertexBuffer, (uint)vertexStride, 0);
-        _deviceContext.IASetIndexBuffer(_indexBuffer, Format.R16_UInt, 0);
+        int stride = Unsafe.SizeOf<ImDrawVert>();
+        _ctx.IASetVertexBuffer(0, _vb, (uint)stride, 0);
+        _ctx.IASetIndexBuffer(_ib, Format.R16_UInt, 0);
 
-        int vertexOffset = 0;
-        int indexOffset = 0;
-        for (int listIndex = 0; listIndex < drawData.CmdListsCount; listIndex++)
+        int vtxOfs = 0, idxOfs = 0;
+        for (int l = 0; l < dd.CmdListsCount; l++)
         {
-            var cmdList = drawData.CmdLists[listIndex];
-            for (int cmdIndex = 0; cmdIndex < cmdList.CmdBuffer.Size; cmdIndex++)
+            var list = dd.CmdLists[l];
+            for (int c = 0; c < list.CmdBuffer.Size; c++)
             {
-                var drawCmd = cmdList.CmdBuffer[cmdIndex];
-                var clip = drawCmd.ClipRect;
+                var cmd = list.CmdBuffer[c];
+                var clip = cmd.ClipRect;
+                _ctx.RSSetScissorRect((int)clip.X, (int)clip.Y, (int)clip.Z, (int)clip.W);
 
-                // Scissor rectangle is specified in framebuffer-space pixels.
-                _deviceContext.RSSetScissorRect((int)clip.X, (int)clip.Y, (int)clip.Z, (int)clip.W);
-                _deviceContext.DrawIndexed(drawCmd.ElemCount, (uint)indexOffset, vertexOffset);
+                // bind texture for this draw
+                var id = cmd.TextureId;
+                if (id == IntPtr.Zero) id = new IntPtr(ImGuiFontTextureId);
+                if (!_textures.TryGetValue(id, out var ti)) ti = new TexInfo { SRV = _fontSRV };
+                _ctx.PSSetShaderResource(0, ti.SRV);
 
-                indexOffset += (int)drawCmd.ElemCount;
+                _ctx.DrawIndexed(cmd.ElemCount, (uint)idxOfs, vtxOfs);
+                idxOfs += (int)cmd.ElemCount;
             }
-            vertexOffset += cmdList.VtxBuffer.Size;
+            vtxOfs += list.VtxBuffer.Size;
         }
     }
 
-    /// <summary>
-    /// Builds the ImGui font atlas as a DX11 texture and a SRV.
-    /// </summary>
     private void RecreateFontTexture()
     {
         var io = ImGui.GetIO();
+        io.Fonts.Clear();
         io.Fonts.AddFontDefault();
-        io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int width, out int height, out int bytesPerPixel);
 
-        var textureDescription = new Texture2DDescription
+        io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int w, out int h, out int bpp);
+
+        var td = new Texture2DDescription
         {
-            Width = (uint)width,
-            Height = (uint)height,
+            Width = (uint)w,
+            Height = (uint)h,
             MipLevels = 1,
             ArraySize = 1,
             Format = Format.R8G8B8A8_UNorm,
@@ -214,51 +189,43 @@ internal sealed class ImGuiRendererD3D11 : IDisposable
 
         unsafe
         {
-            var dataBox = new SubresourceData(pixels.ToPointer(), (uint)(width * bytesPerPixel), 0);
-            using var texture = _device.CreateTexture2D(textureDescription, dataBox);
-            _fontTextureView = _device.CreateShaderResourceView(texture);
+            var data = new SubresourceData(pixels.ToPointer(), (uint)(w * bpp), 0);
+            using var tex = _device.CreateTexture2D(td, data);
+            _fontSRV = _device.CreateShaderResourceView(tex);
         }
 
-        // Store a fake texture ID in ImGui (we aren't using it in this renderer).
+        // register font as texture id 1
+        _textures[new IntPtr(ImGuiFontTextureId)] = new TexInfo { SRV = _fontSRV, W = w, H = h };
         io.Fonts.SetTexID(new IntPtr(ImGuiFontTextureId));
     }
 
-    /// <summary>
-    /// Create shaders, input layout, sampler, and the fixed pipeline states.
-    /// </summary>
     private void CreateDeviceObjects()
     {
-        // Simple shader pair that transforms vertices by the projection matrix and samples the font texture.
-        string vertexShaderSource = @"cbuffer vertexBuffer : register(b0) { float4x4 ProjectionMatrix; };
-struct VS_INPUT { float2 pos : POSITION; float2 uv : TEXCOORD0; float4 col : COLOR0; };
-struct PS_INPUT { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float4 col : COLOR0; };
-PS_INPUT main(VS_INPUT input) { PS_INPUT output;
-output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));
-output.uv = input.uv; output.col = input.col; return output; }";
+        string vs = @"cbuffer vertexBuffer : register(b0) { float4x4 ProjectionMatrix; }
+struct VS_IN { float2 pos : POSITION; float2 uv : TEXCOORD0; float4 col : COLOR0; };
+struct PS_IN { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float4 col : COLOR0; };
+PS_IN main(VS_IN i){ PS_IN o; o.pos = mul(ProjectionMatrix, float4(i.pos.xy,0,1)); o.uv=i.uv; o.col=i.col; return o; }";
 
-        string pixelShaderSource = @"struct PS_INPUT { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float4 col : COLOR0; };
-sampler sampler0; Texture2D texture0;
-float4 main(PS_INPUT input) : SV_Target { return input.col * texture0.Sample(sampler0, input.uv); }";
+        // Premultiply in shader to match Src=ONE blending
+        string ps = @"struct PS_IN { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float4 col : COLOR0; };
+sampler s0; Texture2D t0;
+float4 main(PS_IN i):SV_Target { float4 c = i.col * t0.Sample(s0, i.uv); c.rgb *= c.a; return c; }";
 
-        // Vortice.D3DCompiler 3.6.x returns ReadOnlyMemory<byte> here.
-        var vsBytes = Compiler.Compile(vertexShaderSource, null, "main", "imgui_vs", "vs_5_0",
-            ShaderFlags.OptimizationLevel3, EffectFlags.None);
+        var vsBytes = Compiler.Compile(vs, null, "main", "imgui_vs", "vs_5_0", ShaderFlags.OptimizationLevel3, EffectFlags.None);
+        var psBytes = Compiler.Compile(ps, null, "main", "imgui_ps", "ps_5_0", ShaderFlags.OptimizationLevel3, EffectFlags.None);
 
-        var psBytes = Compiler.Compile(pixelShaderSource, null, "main", "imgui_ps", "ps_5_0",
-            ShaderFlags.OptimizationLevel3, EffectFlags.None);
+        _vs = _device.CreateVertexShader(vsBytes.Span);
+        _ps = _device.CreatePixelShader(psBytes.Span);
 
-        _vertexShader = _device.CreateVertexShader(vsBytes.Span);
-        _pixelShader = _device.CreatePixelShader(psBytes.Span);
-
-        var inputElements = new[]
+        var input = new[]
         {
-            new InputElementDescription("POSITION", 0, Format.R32G32_Float,   0, 0),
-            new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float,   8, 0),
-            new InputElementDescription("COLOR",    0, Format.R8G8B8A8_UNorm, 16, 0),
+            new InputElementDescription("POSITION",0,Format.R32G32_Float,   0,0),
+            new InputElementDescription("TEXCOORD",0,Format.R32G32_Float,   8,0),
+            new InputElementDescription("COLOR",   0,Format.R8G8B8A8_UNorm,16,0),
         };
-        _inputLayout = _device.CreateInputLayout(inputElements, vsBytes.Span);
+        _il = _device.CreateInputLayout(input, vsBytes.Span);
 
-        var samplerDescription = new SamplerDescription
+        var samp = new SamplerDescription
         {
             Filter = Filter.MinMagMipLinear,
             AddressU = TextureAddressMode.Wrap,
@@ -268,19 +235,13 @@ float4 main(PS_INPUT input) : SV_Target { return input.col * texture0.Sample(sam
             MinLOD = 0,
             MaxLOD = float.MaxValue
         };
-        _fontSampler = _device.CreateSamplerState(samplerDescription);
+        _sampler = _device.CreateSamplerState(samp);
 
-        var blendDescription = new BlendDescription
-        {
-            AlphaToCoverageEnable = false,
-            IndependentBlendEnable = false
-        };
-
-        // Premultiplied alpha blending setup: out = src.rgb * src.a + dst.rgb * (1 - src.a)
-        var renderTargetBlend = new RenderTargetBlendDescription
+        var bd = new BlendDescription { AlphaToCoverageEnable = false, IndependentBlendEnable = false };
+        var rtb = new RenderTargetBlendDescription
         {
             BlendEnable = true,
-            SourceBlend = Blend.SourceAlpha,
+            SourceBlend = Blend.One,                  // premultiplied
             DestinationBlend = Blend.InverseSourceAlpha,
             BlendOperation = BlendOperation.Add,
             SourceBlendAlpha = Blend.One,
@@ -288,33 +249,79 @@ float4 main(PS_INPUT input) : SV_Target { return input.col * texture0.Sample(sam
             BlendOperationAlpha = BlendOperation.Add,
             RenderTargetWriteMask = ColorWriteEnable.All
         };
+        bd.RenderTarget[0] = rtb;
+        _blend = _device.CreateBlendState(bd);
 
-        blendDescription.RenderTarget[0] = renderTargetBlend;
-        _blendState = _device.CreateBlendState(blendDescription);
+        var rd = new RasterizerDescription(CullMode.None, FillMode.Solid) { ScissorEnable = true, DepthClipEnable = true };
+        _rast = _device.CreateRasterizerState(rd);
 
-        var rasterizerDescription = new RasterizerDescription(CullMode.None, FillMode.Solid)
+        var dd = new DepthStencilDescription(false, DepthWriteMask.All, ComparisonFunction.Always);
+        _depth = _device.CreateDepthStencilState(dd);
+    }
+
+    // ----------- Texture API for the app -----------
+
+    public IntPtr CreateTextureFromFile(string path, out int width, out int height)
+    {
+        using var bmp = new Bitmap(path);
+        var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
+
+        var data = bmp.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb); // BGRA
+        try
         {
-            ScissorEnable = true,   // ImGui relies on per-draw scissor rectangles
-            DepthClipEnable = true
-        };
-        _rasterizerState = _device.CreateRasterizerState(rasterizerDescription);
+            // Use B8G8R8A8 to avoid swizzling
+            var td = new Texture2DDescription
+            {
+                Width = (uint)bmp.Width,
+                Height = (uint)bmp.Height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = Format.B8G8R8A8_UNorm,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.ShaderResource,
+                CPUAccessFlags = CpuAccessFlags.None,
+                MiscFlags = ResourceOptionFlags.None
+            };
 
-        var depthDescription = new DepthStencilDescription(false, DepthWriteMask.All, ComparisonFunction.Always);
-        _depthState = _device.CreateDepthStencilState(depthDescription);
+            unsafe
+            {
+                var srd = new SubresourceData(data.Scan0.ToPointer(), (uint)data.Stride, 0);
+                using var tex = _device.CreateTexture2D(td, srd);
+                var srv = _device.CreateShaderResourceView(tex);
+
+                var id = new IntPtr(System.Threading.Interlocked.Increment(ref _nextTexId));
+                _textures[id] = new TexInfo { SRV = srv, W = bmp.Width, H = bmp.Height };
+
+                width = bmp.Width; height = bmp.Height;
+                return id;
+            }
+        }
+        finally
+        {
+            bmp.UnlockBits(data);
+        }
+    }
+
+    public (int width, int height) GetTextureSize(IntPtr id)
+    {
+        return _textures.TryGetValue(id, out var ti) ? (ti.W, ti.H) : (0, 0);
     }
 
     public void Dispose()
     {
-        _depthState?.Dispose();
-        _rasterizerState?.Dispose();
-        _blendState?.Dispose();
-        _fontSampler?.Dispose();
-        _fontTextureView?.Dispose();
-        _inputLayout?.Dispose();
-        _pixelShader?.Dispose();
-        _vertexShader?.Dispose();
-        _indexBuffer?.Dispose();
-        _vertexBuffer?.Dispose();
+        foreach (var kv in _textures)
+            kv.Value.SRV?.Dispose();
+
+        _depth?.Dispose();
+        _rast?.Dispose();
+        _blend?.Dispose();
+        _sampler?.Dispose();
+        _il?.Dispose();
+        _ps?.Dispose();
+        _vs?.Dispose();
+        _ib?.Dispose();
+        _vb?.Dispose();
         ImGui.DestroyContext();
     }
 }
