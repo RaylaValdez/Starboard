@@ -28,15 +28,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="NativeMethods.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Assets\Icons\cassiopia.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Assets\Templates\" />
+    <ProjectReference Include="..\..\Overlay-Renderer\Overlay-Renderer\Overlay-Renderer.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,9 +40,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Icons\cassiopia.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Templates\mobiglass_logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
