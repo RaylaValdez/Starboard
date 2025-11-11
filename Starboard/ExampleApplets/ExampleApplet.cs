@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using Starboard.DistributedApplets;
 using System.Numerics;
 
 namespace Starboard.ExampleApplets

@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Starboard.ExampleApplets
+namespace Starboard.DistributedApplets
 {
     /// <summary>
     /// Contract for a Starboard applet.

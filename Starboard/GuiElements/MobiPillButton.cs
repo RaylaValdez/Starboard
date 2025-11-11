@@ -1,8 +1,6 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Numerics;
 using System.Text.Json;
-using System.IO;
 using ImGuiNET;
 using Overlay_Renderer.Methods;
 using Overlay_Renderer.Helpers;

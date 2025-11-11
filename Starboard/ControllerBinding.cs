@@ -1,5 +1,4 @@
 ﻿// Starboard project
-using System;
 using Overlay_Renderer.Methods;
 
 namespace Starboard

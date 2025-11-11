@@ -6,9 +6,6 @@ using Overlay_Renderer.Methods;
 using Starboard.Guis;
 using System.Diagnostics;
 using System.Drawing;
-using System.Numerics;
-using System.Text.Json;
-using Windows.System;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -214,7 +211,7 @@ internal static class Program
 
             ImGuiInput.UpdateMouse(overlay);
             ImGuiInput.UpdateKeyboard();
-            ImGuiInput.UseOsCursor(true);
+            //ImGuiInput.UseOsCursor(true);
 
             ControllerInput.Update();
             WebBrowserManager.BeginFrame();
@@ -246,6 +243,11 @@ internal static class Program
                 // Only steal focus back to Star Citizen if the mouse
                 // is *not* currently over any web region.
                 PInvoke.SetForegroundWindow(_targetHwnd);
+            }
+
+            if (WebBrowserManager.MouseOverWebRegion)
+            {
+                ImGuiInput.ForceHideOsCursor();
             }
 
             Thread.Sleep(16);

@@ -1,21 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 using ImGuiNET;
 using Overlay_Renderer.Methods;
 
-namespace Starboard.ExampleApplets
+namespace Starboard.DistributedApplets
 {
-    internal sealed class CornerstoneFinderApplet : IStarboardApplet
+    internal sealed class DPSCalculatorApplet : IStarboardApplet
     {
-        public string Id => "starboard.cstone.finder";
-        public string DisplayName => "Cornerstone Finder";
+        public string Id => "starboard.dpscalculator";
+        public string DisplayName => "DPSCalculator";
         public bool UsesWebView => true;
 
-        public string _url = "https://finder.cstone.space/";
+        public string _url = "https://www.erkul.games/live/calculator";
         private string _status = "Idle";
 
         public string? FaviconUrl => _url + "/favicon.ico";
