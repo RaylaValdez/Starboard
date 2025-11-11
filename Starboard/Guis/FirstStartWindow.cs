@@ -1,8 +1,8 @@
 ﻿using ImGuiNET;
 using Overlay_Renderer.Methods;
 using Starboard.GuiElements;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Net.NetworkInformation;
 using System.Numerics;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 
@@ -28,12 +28,23 @@ internal static class FirstStartWindow
     private static bool _usesJoypad;
     private static bool _firstRunComplete;
 
+    // Controller bindings (multiple per action)
+    private static List<ControllerBinding> _openMobiglassControllerBinds = new();
+    private static List<ControllerBinding> _openMobimapControllerBinds = new();
+    private static List<ControllerBinding> _openMobicommsControllerBinds = new();
+
     public static void SetMobiFrame(Rectangle mobiFrame)
     {
         _mobiFramePx = mobiFrame;
     }
 
-    public static void Initialize(IntPtr cassioTex, float dpiScale, Rectangle mobiFrame, ImFontPtr fontBold, ImFontPtr font, ImFontPtr smallFont)
+    public static void Initialize(
+        IntPtr cassioTex,
+        float dpiScale,
+        Rectangle mobiFrame,
+        ImFontPtr fontBold,
+        ImFontPtr font,
+        ImFontPtr smallFont)
     {
         _dpiScale = dpiScale;
         _mobiFramePx = mobiFrame;
@@ -55,8 +66,19 @@ internal static class FirstStartWindow
 
         _usesJoypad = StarboardSettingsStore.Current.UsesJoyPad;
         _firstRunComplete = StarboardSettingsStore.Current.FirstRunCompleted;
-    }
 
+        // Copy controller lists and ensure they're sane
+        _openMobiglassControllerBinds =
+            StarboardSettingsStore.Current.OpenMobiglassControllerBinds ?? new List<ControllerBinding> { new ControllerBinding() };
+        _openMobimapControllerBinds =
+            StarboardSettingsStore.Current.OpenMobimapControllerBinds ?? new List<ControllerBinding> { new ControllerBinding() };
+        _openMobicommsControllerBinds =
+            StarboardSettingsStore.Current.OpenMobicommsControllerBinds ?? new List<ControllerBinding> { new ControllerBinding() };
+
+        if (_openMobiglassControllerBinds.Count == 0) _openMobiglassControllerBinds.Add(new ControllerBinding());
+        if (_openMobimapControllerBinds.Count == 0) _openMobimapControllerBinds.Add(new ControllerBinding());
+        if (_openMobicommsControllerBinds.Count == 0) _openMobicommsControllerBinds.Add(new ControllerBinding());
+    }
 
     public static void Draw()
     {
@@ -67,7 +89,7 @@ internal static class FirstStartWindow
         var centerPos = new Vector2(centerX, centerY);
 
         ImGui.SetNextWindowSize(winSize, ImGuiCond.Always);
-        ImGui.SetNextWindowPos(centerPos, ImGuiCond.Always, new Vector2(0f,0f));
+        ImGui.SetNextWindowPos(centerPos, ImGuiCond.Always, new Vector2(0f, 0f));
 
         ImGui.Begin("##FirstStart",
             ImGuiWindowFlags.NoMove |
@@ -81,12 +103,10 @@ internal static class FirstStartWindow
         float padding = 18f * _dpiScale;
 
         Vector2 buttonSize = new Vector2(100 * _dpiScale, 28 * _dpiScale);
+        Vector2 controllerButtonSize = new Vector2(90 * _dpiScale, 28 * _dpiScale);
         Vector2 toggleSize = new Vector2(66 * _dpiScale, 28 * _dpiScale);
 
-
         float buttonY = windowHeight - buttonSize.Y / 1.5f - padding;
-        float toggleY = windowHeight - toggleSize.Y / 1.5f - padding;
-
 
         float leftButtonX = padding;
         float rightButtonX = windowWidth - buttonSize.X - padding;
@@ -147,7 +167,7 @@ internal static class FirstStartWindow
                 ImGui.Spacing();
                 ImGui.Separator();
                 ImGui.Spacing();
-                
+
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0f, 0f, 0f, 0f));
 
                 ImGui.BeginChild("##scrollText", scrollSize, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysVerticalScrollbar);
@@ -227,8 +247,8 @@ internal static class FirstStartWindow
                 ImGui.Spacing();
                 ImGui.Separator();
                 ImGui.Spacing();
-                
-                ImGui.Text("Open Mobiglass:");
+
+                ImGui.Text("Mobiglass:");
                 ImGui.SameLine();
                 ImGui.SetCursorPosX(windowWidth - buttonSize.X - padding);
 
@@ -240,7 +260,7 @@ internal static class FirstStartWindow
                 }
 
                 ImGui.NewLine();
-                ImGui.Text("Open Mobiglass Map:");
+                ImGui.Text("Mobiglass Map:");
                 ImGui.SameLine();
                 ImGui.SetCursorPosX(windowWidth - buttonSize.X - padding);
                 if (HotkeyPicker.Draw("Open Mobiglass Map", buttonSize, ref _openMobiMapVk, ref _openMobiMapImGui))
@@ -251,7 +271,7 @@ internal static class FirstStartWindow
                 }
 
                 ImGui.NewLine();
-                ImGui.Text("Open Mobiglass Comms:");
+                ImGui.Text("Mobiglass Comms:");
                 ImGui.SameLine();
                 ImGui.SetCursorPosX(windowWidth - buttonSize.X - padding);
                 if (HotkeyPicker.Draw("Open Mobiglass Comms", buttonSize, ref _openMobiCommsVk, ref _openMobiCommsImGui))
@@ -289,11 +309,109 @@ internal static class FirstStartWindow
                         ImGui.PopFont();
                 }
 
-                
+                break;
+            }
+
+            case 2:
+            {
+                if (_cassioTex != IntPtr.Zero)
+                {
+                    float iconH = 96f * _dpiScale;
+                    float iconW = iconH;
+                    var iconSize = new Vector2(iconW, iconH);
+
+                    float iconX = (windowWidth - iconW) / 2;
+
+                    ImGui.SetCursorPosX(iconX);
+                    ImGui.Image(_cassioTex, iconSize);
+                }
+
+                string title = "Controller Assignment";
+                unsafe
+                {
+                    if (_orbiBoldFont.NativePtr != null)
+                        ImGui.PushFont(_orbiBoldFont);
+                }
+
+                var textSize = ImGui.CalcTextSize(title);
+                float windowCenter = ImGui.GetWindowSize().X / 2;
+                ImGui.SetCursorPosX(windowCenter - textSize.X / 2);
+                ImGui.Text(title);
+                unsafe
+                {
+                    if (_orbiBoldFont.NativePtr != null)
+                        ImGui.PopFont();
+                }
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                unsafe
+                {
+                    if (_orbiRegFont.NativePtr != null)
+                        ImGui.PushFont(_orbiRegFont);
+                }
+
+                ImGui.TextWrapped("Starboard needs to know when you open your mobiglass.");
+                ImGui.Spacing();
+                ImGui.TextWrapped("If your controller bindings for Mobiglass are different, you can update them!");
+                ImGui.Spacing();
+                ImGui.TextWrapped("You can add binds from multiple devices, just click +.");
+                ImGui.Spacing();
+                ImGui.TextWrapped("To remove a binding, right click it.");
+
+                ImGui.SetCursorPosY(windowHeight * 0.52f);
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                bool changed = false;
+
+                ImGui.Text("Mobiglass:");
+                ImGui.SameLine();
+                changed |= DrawControllerBindingList(
+                    "OpenMobiglassController",
+                    _openMobiglassControllerBinds,
+                    controllerButtonSize
+                );
+
+                ImGui.NewLine();
+                ImGui.Text("Mobiglass Map:");
+                ImGui.SameLine();
+                changed |= DrawControllerBindingList(
+                    "OpenMobimapController",
+                    _openMobimapControllerBinds,
+                    controllerButtonSize
+                );
+
+                ImGui.NewLine();
+                ImGui.Text("Mobiglass Comms:");
+                ImGui.SameLine();
+                changed |= DrawControllerBindingList(
+                    "OpenMobicommsController",
+                    _openMobicommsControllerBinds,
+                    controllerButtonSize
+                );
+
+                if (changed)
+                {
+                    StarboardSettingsStore.Current.OpenMobiglassControllerBinds = _openMobiglassControllerBinds;
+                    StarboardSettingsStore.Current.OpenMobimapControllerBinds = _openMobimapControllerBinds;
+                    StarboardSettingsStore.Current.OpenMobicommsControllerBinds = _openMobicommsControllerBinds;
+                    StarboardSettingsStore.Save();
+                }
+
+                unsafe
+                {
+                    if (_orbiRegFont.NativePtr != null)
+                        ImGui.PopFont();
+                }
                 break;
             }
         }
-        
+
+        // Bottom buttons
         ImGui.SetCursorPosY(buttonY - padding * 0.5f);
         ImGui.Separator();
         ImGui.Spacing();
@@ -311,25 +429,28 @@ internal static class FirstStartWindow
                 pageNumber--;
         }
 
-        ImGui.SetCursorPos(new(rightButtonX, buttonY));
+        ImGui.SetCursorPos(new Vector2(rightButtonX, buttonY));
         if (ImGui.Button("Continue", buttonSize))
         {
-            if (pageNumber < 2)
+            // Explicit wizard flow:
+            // 0 -> 1
+            // 1 -> 2 if using controller, else complete
+            // 2 -> complete
+            if (pageNumber == 0)
             {
-                pageNumber++;
+                pageNumber = 1;
             }
-
-            if (pageNumber > 1)
+            else if (pageNumber == 1)
             {
-                if (!_usesJoypad)
-                {
-                    _firstRunComplete = true;
-                    StarboardSettingsStore.Current.FirstRunCompleted = true;
-                    StarboardSettingsStore.Save();
-                    AppState.ShowPlayground = true;
-                }
+                if (_usesJoypad)
+                    pageNumber = 2;
+                else
+                    CompleteFirstRun();
             }
-            
+            else if (pageNumber == 2)
+            {
+                CompleteFirstRun();
+            }
         }
 
         unsafe
@@ -337,7 +458,131 @@ internal static class FirstStartWindow
             if (_orbiRegFont.NativePtr != null)
                 ImGui.PopFont();
         }
+
         HitTestRegions.AddCurrentWindow();
         ImGui.End();
+    }
+
+    private static bool DrawControllerBindingList(
+    string idPrefix,
+    List<ControllerBinding> binds,
+    Vector2 buttonSize)
+    {
+        bool changed = false;
+        ImGui.PushID(idPrefix);
+
+        var style = ImGui.GetStyle();
+
+        // We're already on the same line as the label.
+        float rowStartX = ImGui.GetCursorPosX();
+        float rowStartY = ImGui.GetCursorPosY();
+
+        // Remaining width to the right of the label (this is a WIDTH)
+        float availWidth = ImGui.GetContentRegionAvail().X;
+        if (availWidth <= 0f)
+        {
+            ImGui.PopID();
+            return false;
+        }
+
+        float rowHeight = buttonSize.Y + style.FramePadding.Y * 2f;
+
+        // '+' button metrics
+        float plusTextWidth = ImGui.CalcTextSize("+").X;
+        float plusWidth = plusTextWidth + style.FramePadding.X * 2f;
+        float gap = plusWidth * 0.5f; // desired gap between last bind and '+'
+
+        // Visible scroll area so: [child] + gap + [plus] == availWidth
+        float buttonsRegionWidth = availWidth - plusWidth - gap;
+        if (buttonsRegionWidth < 1f)
+            buttonsRegionWidth = 1f;
+
+        // Total width of all bind buttons (content width)
+        float buttonsTotalWidth = 0f;
+        if (binds.Count > 0)
+        {
+            buttonsTotalWidth =
+                binds.Count * buttonSize.X +
+                (binds.Count - 1) * style.ItemInnerSpacing.X;
+        }
+
+        // Virtual content width => enables horizontal scrolling
+        float contentWidth = Math.Max(buttonsRegionWidth, buttonsTotalWidth);
+
+        // ----- SCROLLABLE CHILD (RIGHT-ALIGNED, INVISIBLE SCROLLBAR) -----
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0f, 0f, 0f, 0f));
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarBg, new Vector4(0f, 0f, 0f, 0f));
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarGrab, new Vector4(0f, 0f, 0f, 0f));
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarGrabHovered, new Vector4(0f, 0f, 0f, 0f));
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarGrabActive, new Vector4(0f, 0f, 0f, 0f));
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+
+        ImGui.SetNextWindowContentSize(new Vector2(contentWidth, rowHeight));
+
+        ImGui.BeginChild(
+            "##buttonsScroll",
+            new Vector2(buttonsRegionWidth, rowHeight),
+            ImGuiChildFlags.None,
+            ImGuiWindowFlags.NoScrollbar);
+
+        // Right-align inside the visible region when not scrolled
+        float startX = 0f;
+        if (buttonsTotalWidth < buttonsRegionWidth)
+            startX = buttonsRegionWidth - buttonsTotalWidth;
+
+        ImGui.SetCursorPosX(startX);
+
+        for (int i = 0; i < binds.Count; i++)
+        {
+            if (i > 0)
+                ImGui.SameLine();
+
+            ImGui.PushID(i);
+            if (ControllerButtonPicker.Draw("##controllerbind", buttonSize, binds[i]))
+            {
+                changed = true;
+            }
+
+            // Right-click to remove
+            if (ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
+            {
+                binds.RemoveAt(i);
+                i--;
+                changed = true;
+            }
+
+            ImGui.PopID();
+        }
+
+        ImGui.EndChild();
+
+        ImGui.PopStyleVar();   // WindowPadding
+        ImGui.PopStyleColor(5); // ChildBg + 4 scrollbar colors
+                                // ----------------------------------------------------
+
+        // '+' flush to the right edge of the content region, same Y as row
+        float plusX = rowStartX + availWidth - plusWidth;
+        ImGui.SetCursorPos(new Vector2(plusX, rowStartY));
+
+        if (ImGui.Button("+", new Vector2(plusWidth, rowHeight * 0.8f)))
+        {
+            binds.Add(new ControllerBinding());
+            changed = true;
+        }
+
+        ImGui.PopID();
+        return changed;
+    }
+
+
+
+
+
+    private static void CompleteFirstRun()
+    {
+        _firstRunComplete = true;
+        StarboardSettingsStore.Current.FirstRunCompleted = true;
+        StarboardSettingsStore.Save();
+        AppState.ShowPlayground = true;
     }
 }

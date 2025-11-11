@@ -27,7 +27,7 @@ namespace Starboard.GuiElements
             public float PillWidthToHeight { get; set; } = 2.35f;  // pill width = height * ratio
             public float RightMarginRel { get; set; } = 0.028f; // from frame right
             public float BottomMarginRel { get; set; } = 0.020f; // from frame bottom
-            public float InnerPadFrac { get; set; } = 0.18f;  // inner padding as % of pill H
+            public float InnerPadFrac { get; set; } = 0.18f;  // inner padding as % of pill Ha
             public float IconHeightFrac { get; set; } = 0.55f;  // icon height as % of inner box H
             public float BorderThickness { get; set; } = 2.0f;   // border px (scaled by DPI)
 

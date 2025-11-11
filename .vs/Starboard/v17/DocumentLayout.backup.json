@@ -3,36 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guis\\firststartwindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guis\\firststartwindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guis\\starboardmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guis\\starboardmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\methods\\webviewsurface.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\methods\\imguiinput.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guielements\\toggleswitch.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guielements\\toggleswitch.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guielements\\hotkeypicker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guielements\\hotkeypicker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\starboardsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\starboardsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\imguirenderer\\imguirendererd3d11.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\overlaywindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\nativemethods.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\methods\\webbrowsermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -41,124 +19,46 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedWidth": 277,
-          "SelectedChildIndex": 6,
+          "DockedWidth": 427,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ToggleSwitch.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\GuiElements\\ToggleSwitch.cs",
-              "RelativeDocumentMoniker": "Starboard\\GuiElements\\ToggleSwitch.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\GuiElements\\ToggleSwitch.cs",
-              "RelativeToolTip": "Starboard\\GuiElements\\ToggleSwitch.cs",
-              "ViewState": "AgIAAF8AAAAAAAAAAAAEwGgAAABDAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-09T04:02:27.159Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "HotkeyPicker.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\GuiElements\\HotkeyPicker.cs",
-              "RelativeDocumentMoniker": "Starboard\\GuiElements\\HotkeyPicker.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\GuiElements\\HotkeyPicker.cs",
-              "RelativeToolTip": "Starboard\\GuiElements\\HotkeyPicker.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACAAAAAwAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-09T02:15:50.646Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "NativeMethods.txt",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\NativeMethods.txt",
-              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\NativeMethods.txt",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\NativeMethods.txt",
-              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\NativeMethods.txt",
-              "ViewState": "AgIAACcAAAAAAAAAAAAAAEUAAAALAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2025-11-09T01:31:31.039Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "OverlayWindow.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\OverlayWindow.cs",
-              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\OverlayWindow.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\OverlayWindow.cs",
-              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\OverlayWindow.cs",
-              "ViewState": "AgIAAIMAAAAAAAAAAAAUwOQAAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-09T01:27:38.854Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ImGuiInput.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Methods\\ImGuiInput.cs",
-              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\Methods\\ImGuiInput.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Methods\\ImGuiInput.cs",
-              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\Methods\\ImGuiInput.cs",
-              "ViewState": "AgIAAOUAAAAAAAAAAAApwAoBAAAxAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-09T01:24:55.224Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "StarboardSettings.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\StarboardSettings.cs",
-              "RelativeDocumentMoniker": "Starboard\\StarboardSettings.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\StarboardSettings.cs",
-              "RelativeToolTip": "Starboard\\StarboardSettings.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-08T23:52:06.022Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "FirstStartWindow.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\FirstStartWindow.cs",
-              "RelativeDocumentMoniker": "Starboard\\Guis\\FirstStartWindow.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\FirstStartWindow.cs",
-              "RelativeToolTip": "Starboard\\Guis\\FirstStartWindow.cs",
-              "ViewState": "AgIAAPwAAAAAAAAAAAAAAEkBAAARAAAAAAAAAA==",
+              "Title": "StarboardMain.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\StarboardMain.cs",
+              "RelativeDocumentMoniker": "Starboard\\Guis\\StarboardMain.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\StarboardMain.cs",
+              "RelativeToolTip": "Starboard\\Guis\\StarboardMain.cs",
+              "ViewState": "AgIAAHABAAAAAAAAAADwv7UBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-08T22:16:09.246Z",
+              "WhenOpened": "2025-11-11T00:18:13.671Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Program.cs",
-              "RelativeDocumentMoniker": "Starboard\\Program.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Program.cs",
-              "RelativeToolTip": "Starboard\\Program.cs",
-              "ViewState": "AgIAALEAAAAAAAAAAAAUwN8AAAAoAAAAAAAAAA==",
+              "Title": "WebViewSurface.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebViewSurface.cs",
+              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebViewSurface.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebViewSurface.cs",
+              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebViewSurface.cs",
+              "ViewState": "AgIAAF8AAAAAAAAAAADwv40AAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-08T22:09:39.552Z",
+              "WhenOpened": "2025-11-10T23:42:06.219Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ImGuiRendererD3D11.cs",
-              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
-              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
-              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
-              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
-              "ViewState": "AgIAACoAAAAAAAAAAAAUwNwAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "WebBrowserManager.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebBrowserManager.cs",
+              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebBrowserManager.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebBrowserManager.cs",
+              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\Methods\\WebBrowserManager.cs",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAiwIcAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-08T22:08:29.45Z",
+              "WhenOpened": "2025-11-10T23:41:55.415Z",
               "EditorCaption": ""
             }
           ]

@@ -49,6 +49,8 @@ internal static class Program
     private static bool _usesJoypad;
     private static bool _firstRunComplete;
 
+    private static HWND _targetHwnd;
+
     [STAThread]
     private static void Main(string[] args)
     {
@@ -64,6 +66,7 @@ internal static class Program
         }
 
         var targetHwnd = new HWND(rawHwnd);
+        _targetHwnd = targetHwnd;
         unsafe
         {
             Logger.Info($"Attached to StarCitizen window 0x{(nuint)targetHwnd.Value:X}");
@@ -114,6 +117,9 @@ internal static class Program
         // Init playground
         Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx);
         FirstStartWindow.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
+        StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
+        TextureService.Initialize(imguiRenderer);
+        WebBrowserManager.Initialize(overlay.Hwnd, _mobiFramePx.Width, _mobiFramePx.Height);
 
         // Load Settings
         StarboardSettingsStore.Load();
@@ -145,6 +151,7 @@ internal static class Program
                 _mobiFramePx = ComputeMobiFrame(w, h);
                 Playground.SetMobiFrame(_mobiFramePx);
                 FirstStartWindow.SetMobiFrame(_mobiFramePx);
+                StarboardMain.SetMobiFrame(_mobiFramePx);
 
                 if (firstSize)
                 {
@@ -209,6 +216,11 @@ internal static class Program
             ImGuiInput.UpdateKeyboard();
             ImGuiInput.UseOsCursor(true);
 
+            ControllerInput.Update();
+            WebBrowserManager.BeginFrame();
+
+            HWND fg = PInvoke.GetForegroundWindow();
+
             HitTestRegions.BeginFrame();
 
             if (AppState.ShowPlayground)
@@ -224,10 +236,17 @@ internal static class Program
                 FirstStartWindow.Draw();
             }
 
-                HitTestRegions.ApplyToOverlay(overlay);
+            HitTestRegions.ApplyToOverlay(overlay);
 
             imguiRenderer.Render(d3dHost.SwapChain);
             d3dHost.Present();
+
+            if (fg == overlay.Hwnd && !_targetHwnd.IsNull && !WebBrowserManager.MouseOverWebRegion)
+            {
+                // Only steal focus back to Star Citizen if the mouse
+                // is *not* currently over any web region.
+                PInvoke.SetForegroundWindow(_targetHwnd);
+            }
 
             Thread.Sleep(16);
         }
