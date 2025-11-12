@@ -13,7 +13,7 @@ namespace Starboard.DistributedApplets
         public string _url = "https://verseguide.com/";
         private string _status = "Idle";
 
-        public string? FaviconUrl => _url + "/favicon.ico";
+        public string? FaviconUrl => "https://verseguide.com/favicon-96x96.png";
 
         public void Initialize()
         {

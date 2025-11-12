@@ -13,7 +13,7 @@ namespace Starboard.DistributedApplets
         public string _url = "https://finder.cstone.space/";
         private string _status = "Idle";
 
-        public string? FaviconUrl => _url + "/favicon.ico";
+        public string? FaviconUrl => _url + "/ico.png";
 
         public void Initialize()
         {

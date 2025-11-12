@@ -13,7 +13,7 @@ namespace Starboard.ExampleApplets
         public string DisplayName => "Example Applet";
         public bool UsesWebView => false;
 
-        //string IStarboardApplet.FaviconUrl => "";
+        string IStarboardApplet.FaviconUrl => "";
 
         public void Initialize()
         {

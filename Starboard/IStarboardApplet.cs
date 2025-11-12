@@ -14,7 +14,7 @@ namespace Starboard.DistributedApplets
         /// <summary>Name shown in the left applet list.</summary>
         string DisplayName { get; }
 
-        //string FaviconUrl { get; }
+        string FaviconUrl { get; }
 
         bool UsesWebView { get; }
 

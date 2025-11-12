@@ -13,7 +13,7 @@ namespace Starboard.DistributedApplets
         public string _url = "https://robertsspaceindustries.com/spectrum/community/SC";
         private string _status = "Idle";
 
-        public string? FaviconUrl => _url + "/favicon.ico";
+        public string? FaviconUrl => "https://cdn.robertsspaceindustries.com/static/spectrum/images/android.png";
 
         public void Initialize()
         {

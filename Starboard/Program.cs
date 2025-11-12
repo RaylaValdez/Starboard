@@ -10,6 +10,8 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
+using System.Windows.Forms;
+using System.IO;
 
 
 namespace Starboard;
@@ -23,8 +25,7 @@ internal static class Program
     private static readonly Stopwatch _animClock = new();
     private static double _lastAnimSec = 0;
     private static float _dt = 1f / 120f;
-    
-
+   
     // DPI scale from target window
     private static float _dpiScale = 1.0f;
 
@@ -47,6 +48,10 @@ internal static class Program
     private static bool _firstRunComplete;
 
     private static HWND _targetHwnd;
+
+    //Tray
+    private static NotifyIcon? _trayIcon;
+    private static CancellationTokenSource? _ctsForTray;
 
     [STAThread]
     private static void Main(string[] args)
@@ -73,7 +78,6 @@ internal static class Program
         using var d3dHost = new D3DHost(overlay.Hwnd);
         using var imguiRenderer = new ImGuiRendererD3D11(d3dHost.Device, d3dHost.Context);
 
-        // Optional: apply your ImGui style preset (from Overlay-Renderer)
         ImGuiStylePresets.ApplyDark();
 
         // Load icon texture
@@ -89,6 +93,37 @@ internal static class Program
         {
             Logger.Warn($"Failed to load icon texture: {ex.Message}");
             _cassioTex = IntPtr.Zero;
+        }
+
+        // after _cassioTex load, before you Initialize(...) the windows
+        try
+        {
+            FaviconManager.TextureUploader = bytes =>
+            {
+                try
+                {
+                    // Stable path per content to avoid re-writing the same file
+                    var hash = System.Security.Cryptography.SHA1.HashData(bytes);
+                    var name = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant() + ".ico";
+                    var dir = Path.Combine(Path.GetTempPath(), "Starboard", "favicons");
+                    Directory.CreateDirectory(dir);
+                    var file = Path.Combine(dir, name);
+                    if (!File.Exists(file))
+                        File.WriteAllBytes(file, bytes);
+
+                    // Reuse your existing loader (thread-safe because
+                    // we call this from the render thread)
+                    return imguiRenderer.CreateTextureFromFile(file, out _, out _);
+                }
+                catch
+                {
+                    return IntPtr.Zero;
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Failed to set favicon uploader: {ex.Message}");
         }
 
         // Initial mobi frame based on default client size
@@ -112,7 +147,7 @@ internal static class Program
         _orbiRegFontSmall = imguiRenderer.AddFontFromFileTTF("Assets/Fonts/Orbitron/static/Orbitron-Regular.ttf", 16f * _dpiScale);
 
         // Init playground
-        Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx);
+        Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         FirstStartWindow.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         TextureService.Initialize(imguiRenderer);
@@ -134,6 +169,9 @@ internal static class Program
         _firstRunComplete = StarboardSettingsStore.Current.FirstRunCompleted;
 
         var cts = new CancellationTokenSource();
+        _ctsForTray = cts;
+
+        CreateTrayIcon();
 
         // Track Star Citizen window: keep overlay aligned & update frame size
         bool firstSize = true;
@@ -166,6 +204,13 @@ internal static class Program
 
         cts.Cancel();
         try { trackingTask.Wait(500); } catch { /* ignore */ }
+
+        if (_trayIcon != null)
+        {
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+            _trayIcon = null;
+        }
 
         Logger.Info("Starboard shutting down.");
     }
@@ -205,6 +250,10 @@ internal static class Program
             _dt = (float)Math.Clamp(now - _lastAnimSec, 0, 0.1);
             _lastAnimSec = now;
 
+            // Inside RunMessageAndRenderLoop, each frame BEFORE you start drawing windows
+            FaviconManager.ProcessPendingUploads();
+
+
             // Render frame
             d3dHost.BeginFrame();
             imguiRenderer.NewFrame(overlay.ClientWidth, overlay.ClientHeight);
@@ -219,6 +268,7 @@ internal static class Program
             HWND fg = PInvoke.GetForegroundWindow();
 
             HitTestRegions.BeginFrame();
+
 
             if (AppState.ShowPlayground)
             {
@@ -287,5 +337,87 @@ internal static class Program
         {
             Logger.Warn($"Failed to hook StarCitizen process exit: {ex.Message}");
         }
+    }
+
+    private static void CreateTrayIcon()
+    {
+        try
+        {
+            var icon = new Icon(SystemIcons.Application, 16, 16);
+
+            try
+            {
+                string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Icons", "cassiopia.ico");
+
+                if (File.Exists(iconPath))
+                {
+                    icon = new Icon(iconPath);
+                }
+            }
+            catch { }
+
+            var menu = new ContextMenuStrip();
+
+            var restartItem = new ToolStripMenuItem("Restart Starboard");
+            restartItem.Click += (_, _) => RestartApplication();
+
+            var quitItem = new ToolStripMenuItem("Quit Starboard");
+            quitItem.Click += (_, _) => QuitApplication();
+
+            menu.Items.Add(restartItem);
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(quitItem);
+
+            _trayIcon = new NotifyIcon()
+            {
+                Text = "Starboard",
+                Icon = icon,
+                ContextMenuStrip = menu,
+                Visible = true
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Failed to create tray icon: {ex.Message}");
+        }
+    }
+
+    private static void RestartApplication()
+    {
+        try
+        {
+            string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                Process.Start(new ProcessStartInfo(exePath)
+                {
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Failed to restart Starboard from tray: {ex.Message}");
+        }
+
+        QuitApplication();
+    }
+
+    private static void QuitApplication()
+    {
+        try
+        {
+            _ctsForTray?.Cancel();
+        }
+        catch { }
+
+        try
+        {
+            _trayIcon?.Dispose();
+            _trayIcon = null;
+        }
+        catch {}
+
+        Environment.Exit(0);
     }
 }

@@ -99,6 +99,9 @@ namespace Starboard.Guis
             _expandAnim = 0f;
             _hoverAnim = 0f;
             _wasHoveredLastFrame = false;
+            _selectedAppletIndex = -1;
+            WebBrowserManager.SetActiveApplet(null);
+
         }
 
         public static void Draw(float dt)
@@ -185,6 +188,10 @@ namespace Starboard.Guis
                 }
                 else
                 {
+                    _selectedAppletIndex = -1;
+                    selectedApplet = null;
+                    isWebApplet = false;
+                    WebBrowserManager.SetActiveApplet(null);
                     _isExpanded = false;
                 }
             }
@@ -378,15 +385,32 @@ namespace Starboard.Guis
                         6f * _dpiScale);
                 }
 
-                float iconSizePx = 24f * _dpiScale;
+                float iconSizePx = 32f * _dpiScale;
                 float iconPadX = 8f * _dpiScale;
                 float iconPadY = (rowHeight - iconSizePx) * 0.5f;
 
                 Vector2 iconMin = rowMin + new Vector2(iconPadX, iconPadY);
                 Vector2 iconMax = iconMin + new Vector2(iconSizePx, iconSizePx);
 
-                uint iconCol = ImGui.GetColorU32(new Vector4(0.85f, 0.85f, 0.9f, 1f));
-                dlLeft.AddRect(iconMin, iconMax, iconCol, 6f * _dpiScale, ImDrawFlags.None, 2f);
+                // Try favicon
+                IntPtr favTex = FaviconManager.GetOrRequest(applet.Id, applet.FaviconUrl);
+
+                if (favTex != IntPtr.Zero)
+                {
+                    dlLeft.AddImage(
+                        favTex,
+                        iconMin,
+                        iconMax,
+                        new Vector2(0, 0),
+                        new Vector2(1, 1),
+                        ImGui.GetColorU32(new Vector4(1, 1, 1, 1)));
+                }
+                else
+                {
+                    // Fallback: your old square outline
+                    uint iconCol = ImGui.GetColorU32(new Vector4(0.85f, 0.85f, 0.9f, 1f));
+                    dlLeft.AddRect(iconMin, iconMax, iconCol, 6f * _dpiScale, ImDrawFlags.None, 2f);
+                }
 
                 string name = applet.DisplayName ?? "<unnamed>";
                 float textYRow = rowMin.Y + (rowHeight - ImGui.GetTextLineHeight()) * 0.5f;
@@ -434,13 +458,20 @@ namespace Starboard.Guis
                              WebBrowserManager.ActiveCanGoBack();
 
             ImGui.BeginDisabled(!canGoBack);
+
+            unsafe
+            {
+                if (_orbiRegFont.NativePtr != null)
+                    ImGui.PushFont(_orbiRegFont);
+            }
+
             if (ImGui.Button("Back", new Vector2(0, buttonHeight)))
             {
                 WebBrowserManager.GoBackOnActiveApplet();
             }
             ImGui.EndDisabled();
 
-            ImGui.SameLine();
+            ImGui.SameLine();           
 
             if (ImGui.Button("Home", new Vector2(0, buttonHeight)))
             {
@@ -448,6 +479,12 @@ namespace Starboard.Guis
                 selectedApplet = null;
                 isWebApplet = false;
                 WebBrowserManager.SetActiveApplet(null);
+            }
+
+            unsafe
+            {
+                if (_orbiRegFont.NativePtr != null)
+                    ImGui.PopFont();
             }
 
             ImGui.PopStyleVar(2);
