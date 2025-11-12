@@ -156,6 +156,9 @@ internal static class Program
         // Load Settings
         StarboardSettingsStore.Load();
 
+        AppState.ShowPlayground = _firstRunComplete;
+
+
         _openMobiglassVk = StarboardSettingsStore.Current.OpenMobiglassKeybindVk;
         _openMobiglassImGui = StarboardSettingsStore.Current.OpenMobiglassKeybind;
 
@@ -269,17 +272,12 @@ internal static class Program
 
             HitTestRegions.BeginFrame();
 
-
-            if (AppState.ShowPlayground)
+            if (_firstRunComplete || AppState.ShowPlayground)
             {
                 Playground.Draw(_dt);
             }
             else
             {
-                if (_firstRunComplete)
-                {
-                    AppState.ShowPlayground = true;
-                }
                 FirstStartWindow.Draw();
             }
 
