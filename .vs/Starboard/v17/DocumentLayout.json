@@ -1,12 +1,224 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\imguirenderer\\imguirendererd3d11.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guis\\starboardmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guis\\starboardmain.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\faviconmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\faviconmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\distributedapplets\\scwikiapplet.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\distributedapplets\\scwikiapplet.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guis\\firststartwindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guis\\firststartwindow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\appstate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\appstate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\guis\\playground.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\guis\\playground.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\starboard.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\starboard.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\overlay-renderer.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{14F585B2-C59C-6D96-3FF1-D2CC866C2AAC}|..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj|c:\\users\\rayla\\documents\\visual studio projects\\overlay-renderer\\overlay-renderer\\overlay-renderer.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\starboard\\starboard.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:starboard\\starboard.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|c:\\users\\rayla\\documents\\visual studio projects\\starboard\\license||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{71C86A0B-543A-418A-B475-D77A0B907D52}|Starboard\\Starboard.csproj|solutionrelative:license||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 12,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ImGuiRendererD3D11.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
+              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
+              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\ImGuiRenderer\\ImGuiRendererD3D11.cs",
+              "ViewState": "AgIAAJAAAAAAAAAAAAArwLIAAABLAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T00:02:55.179Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "FaviconManager.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\FaviconManager.cs",
+              "RelativeDocumentMoniker": "Starboard\\FaviconManager.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\FaviconManager.cs",
+              "RelativeToolTip": "Starboard\\FaviconManager.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABIAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T23:21:36.011Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "SCWikiApplet.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\DistributedApplets\\SCWikiApplet.cs",
+              "RelativeDocumentMoniker": "Starboard\\DistributedApplets\\SCWikiApplet.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\DistributedApplets\\SCWikiApplet.cs",
+              "RelativeToolTip": "Starboard\\DistributedApplets\\SCWikiApplet.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAABdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T23:18:16.504Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Overlay-Renderer.csproj",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-11-12T22:48:50.763Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Overlay-Renderer",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "RelativeDocumentMoniker": "..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "RelativeToolTip": "..\\Overlay-Renderer\\Overlay-Renderer\\Overlay-Renderer.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-11-12T22:52:18.677Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "LICENSE",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\LICENSE",
+              "RelativeDocumentMoniker": "LICENSE",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\LICENSE",
+              "RelativeToolTip": "LICENSE",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-11-12T22:50:28.231Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Starboard.csproj",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Starboard.csproj",
+              "RelativeDocumentMoniker": "Starboard\\Starboard.csproj",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Starboard.csproj",
+              "RelativeToolTip": "Starboard\\Starboard.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-11-12T22:44:49.574Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Starboard",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Starboard.csproj",
+              "RelativeDocumentMoniker": "Starboard\\Starboard.csproj",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Starboard.csproj",
+              "RelativeToolTip": "Starboard\\Starboard.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-11-12T22:45:14.81Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "AppState.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\AppState.cs",
+              "RelativeDocumentMoniker": "Starboard\\AppState.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\AppState.cs",
+              "RelativeToolTip": "Starboard\\AppState.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T22:37:48.153Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "StarboardMain.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\StarboardMain.cs",
+              "RelativeDocumentMoniker": "Starboard\\Guis\\StarboardMain.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\StarboardMain.cs",
+              "RelativeToolTip": "Starboard\\Guis\\StarboardMain.cs",
+              "ViewState": "AgIAAIMBAAAAAAAAAAArwKcBAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T22:23:45.533Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "FirstStartWindow.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\FirstStartWindow.cs",
+              "RelativeDocumentMoniker": "Starboard\\Guis\\FirstStartWindow.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\FirstStartWindow.cs",
+              "RelativeToolTip": "Starboard\\Guis\\FirstStartWindow.cs",
+              "ViewState": "AgIAACUCAAAAAAAAAAAAAFUCAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T22:30:51.524Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Playground.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\Playground.cs",
+              "RelativeDocumentMoniker": "Starboard\\Guis\\Playground.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Guis\\Playground.cs",
+              "RelativeToolTip": "Starboard\\Guis\\Playground.cs",
+              "ViewState": "AgIAAEcAAAAAAAAAAAAAAGUAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T22:23:06.437Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Program.cs",
+              "RelativeDocumentMoniker": "Starboard\\Program.cs",
+              "ToolTip": "C:\\Users\\Rayla\\Documents\\Visual Studio Projects\\Starboard\\Starboard\\Program.cs",
+              "RelativeToolTip": "Starboard\\Program.cs",
+              "ViewState": "AgIAAGAAAAAAAAAAAAAAAIMAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T22:22:44.307Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

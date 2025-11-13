@@ -481,6 +481,13 @@ namespace Starboard.Guis
                 WebBrowserManager.SetActiveApplet(null);
             }
 
+            ImGui.SameLine();
+
+            if (ImGui.Button("Settings", new Vector2(0, buttonHeight)))
+            {
+                FirstStartWindow.OpenToPage(1);
+            }
+
             unsafe
             {
                 if (_orbiRegFont.NativePtr != null)

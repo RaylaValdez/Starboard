@@ -10,6 +10,24 @@
     <ApplicationIcon>Assets\Icons\cassiopia.ico</ApplicationIcon>
     <UseWindowsForms>True</UseWindowsForms>
     <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
+    <Authors>RaylaValdez</Authors>
+    <Company>Triquetra</Company>
+    <Description> Starboard is a transparent, topmost, click-through overlay that renders a single ImGui frame on top of Star Citizen. 
+
+It's designed so devs can build external tools (applets) that render inside a predefined ImGui child. 
+
+Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. </Description>
+    <PackageProjectUrl>https://github.com/RaylaValdez/Starboard</PackageProjectUrl>
+    <PackageIcon>cassiopia.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/RaylaValdez/Starboard</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>gaming; overlay; </PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <Version>0.0.17.14</Version>
+    <AssemblyVersion></AssemblyVersion>
+    <FileVersion></FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +43,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
+    <PackageReference Include="Svg" Version="3.4.7" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.10" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
@@ -37,6 +56,17 @@
     <Content Include="Assets\Icons\cassiopia.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -73,6 +103,8 @@
     </None>
     <None Update="Assets\Icons\cassiopia.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 

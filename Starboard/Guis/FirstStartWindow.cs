@@ -545,9 +545,12 @@ internal static class FirstStartWindow
             // Right-click to remove
             if (ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
             {
-                binds.RemoveAt(i);
-                i--;
-                changed = true;
+                if (i > 1)
+                {
+                    binds.RemoveAt(i);
+                    i--;
+                    changed = true;
+                }
             }
 
             ImGui.PopID();
@@ -573,15 +576,25 @@ internal static class FirstStartWindow
         return changed;
     }
 
+    public static void OpenToPage(int page)
+    {
+        pageNumber = Math.Max(1, page);
+        AppState.ShowFirstStart = true;
+    }
 
-
-
+    public static void Close()
+    {
+        AppState.ShowFirstStart = false;
+    }
 
     private static void CompleteFirstRun()
     {
         _firstRunComplete = true;
         StarboardSettingsStore.Current.FirstRunCompleted = true;
         StarboardSettingsStore.Save();
+
+        AppState.FirstRunCompleted = true;
         AppState.ShowPlayground = true;
+        AppState.ShowFirstStart = false;
     }
 }

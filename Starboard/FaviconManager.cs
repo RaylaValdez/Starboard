@@ -16,6 +16,8 @@ namespace Starboard
         // Set this from Program.cs. It MUST run on the render thread.
         public static Func<byte[], IntPtr>? TextureUploader { get; set; }
 
+        public static int IconSizePx = 32;
+
         private static readonly HttpClient _http = new()
         {
             Timeout = TimeSpan.FromSeconds(10)

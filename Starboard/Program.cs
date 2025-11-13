@@ -1,4 +1,4 @@
-using ImGuiNET;
+﻿using ImGuiNET;
 using Overlay_Renderer;
 using Overlay_Renderer.Helpers;
 using Overlay_Renderer.ImGuiRenderer;
@@ -12,6 +12,8 @@ using Windows.Win32.UI.WindowsAndMessaging;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 using System.Windows.Forms;
 using System.IO;
+using Svg;
+using System.Text;
 
 
 namespace Starboard;
@@ -102,22 +104,75 @@ internal static class Program
             {
                 try
                 {
-                    // Stable path per content to avoid re-writing the same file
-                    var hash = System.Security.Cryptography.SHA1.HashData(bytes);
-                    var name = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant() + ".ico";
-                    var dir = Path.Combine(Path.GetTempPath(), "Starboard", "favicons");
-                    Directory.CreateDirectory(dir);
-                    var file = Path.Combine(dir, name);
-                    if (!File.Exists(file))
-                        File.WriteAllBytes(file, bytes);
+                    var size = Math.Max(16, Math.Min(256, FaviconManager.IconSizePx));
 
-                    // Reuse your existing loader (thread-safe because
-                    // we call this from the render thread)
-                    return imguiRenderer.CreateTextureFromFile(file, out _, out _);
+                    // If it's an SVG, rasterize to 256x256 in-memory and upload directly.
+                    if (LooksLikeSvg(bytes))
+                    {
+                        using var ms = new MemoryStream(bytes);
+                        var svgDoc = SvgDocument.Open<SvgDocument>(ms);
+
+                        // Invert black → white for fills and strokes
+                        foreach (var elem in svgDoc.Descendants().OfType<SvgVisualElement>())
+                        {
+                            if (elem.Fill is SvgColourServer fill)
+                            {
+                                var c = fill.Colour;
+                                if (c.R == 0 && c.G == 0 && c.B == 0)        // ONLY pure black
+                                    elem.Fill = new SvgColourServer(Color.White);
+                            }
+                            if (elem.Stroke is SvgColourServer stroke)
+                            {
+                                var c = stroke.Colour;
+                                if (c.R == 0 && c.G == 0 && c.B == 0)        // ONLY pure black
+                                    elem.Stroke = new SvgColourServer(Color.White);
+                            }
+                        }
+
+                        using var bmp = svgDoc.Draw(32, 32);
+                        return imguiRenderer.CreateTextureFromBitmap(bmp, out _, out _);
+                    }
+                    else
+                    {
+                        using var ms2 = new MemoryStream(bytes);
+                        using var src = new Bitmap(ms2);
+                        using var dst = new Bitmap(size, size);
+                        using (var g = Graphics.FromImage(dst))
+                        {
+                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                            g.DrawImage(src, 0, 0, size, size);
+                        }
+                        return imguiRenderer.CreateTextureFromBitmap(dst, out _, out _, pointSampling: true);
+                    }
+
+
+                        // Non-SVG path (ICO/PNG/JPEG etc.) — load directly from bytes
+                        using var nonSvgMs = new MemoryStream(bytes);
+                    using var bmp2 = new Bitmap(nonSvgMs);
+                    return imguiRenderer.CreateTextureFromBitmap(bmp2, out _, out _);
                 }
                 catch
                 {
-                    return IntPtr.Zero;
+                    // Fallback to your previous temp-file route only if needed
+                    try
+                    {
+                        var hash = System.Security.Cryptography.SHA1.HashData(bytes);
+                        var name = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+
+                        // Pick an extension purely for debugging; loader reads headers anyway
+                        var dir = Path.Combine(Path.GetTempPath(), "Starboard", "favicons");
+                        Directory.CreateDirectory(dir);
+                        var file = Path.Combine(dir, name + ".bin");
+                        if (!File.Exists(file)) File.WriteAllBytes(file, bytes);
+
+                        return imguiRenderer.CreateTextureFromFile(file, out _, out _);
+                    }
+                    catch
+                    {
+                        return IntPtr.Zero;
+                    }
                 }
             };
         }
@@ -146,6 +201,9 @@ internal static class Program
 
         _orbiRegFontSmall = imguiRenderer.AddFontFromFileTTF("Assets/Fonts/Orbitron/static/Orbitron-Regular.ttf", 16f * _dpiScale);
 
+        FaviconManager.IconSizePx = (int)MathF.Round(32f * _dpiScale);
+
+
         // Init playground
         Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         FirstStartWindow.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
@@ -155,9 +213,6 @@ internal static class Program
 
         // Load Settings
         StarboardSettingsStore.Load();
-
-        AppState.ShowPlayground = _firstRunComplete;
-
 
         _openMobiglassVk = StarboardSettingsStore.Current.OpenMobiglassKeybindVk;
         _openMobiglassImGui = StarboardSettingsStore.Current.OpenMobiglassKeybind;
@@ -169,7 +224,11 @@ internal static class Program
         _openMobiCommsImGui = StarboardSettingsStore.Current.OpenMobiCommsKeybind;
 
         _usesJoypad = StarboardSettingsStore.Current.UsesJoyPad;
+
         _firstRunComplete = StarboardSettingsStore.Current.FirstRunCompleted;
+
+        AppState.FirstRunCompleted = _firstRunComplete;
+        AppState.ShowPlayground = AppState.FirstRunCompleted;
 
         var cts = new CancellationTokenSource();
         _ctsForTray = cts;
@@ -200,8 +259,6 @@ internal static class Program
 
         // Close overlay when Star Citizen exits
         TryHookProcessExit(targetHwnd, overlay);
-
-        StarboardSettingsStore.Load();
 
         RunMessageAndRenderLoop(overlay, d3dHost, imguiRenderer, cts);
 
@@ -272,13 +329,13 @@ internal static class Program
 
             HitTestRegions.BeginFrame();
 
-            if (_firstRunComplete || AppState.ShowPlayground)
+            if (AppState.ShowFirstStart || !AppState.FirstRunCompleted)
             {
-                Playground.Draw(_dt);
+                FirstStartWindow.Draw();
             }
             else
             {
-                FirstStartWindow.Draw();
+                Playground.Draw(_dt);
             }
 
             HitTestRegions.ApplyToOverlay(overlay);
@@ -378,6 +435,17 @@ internal static class Program
         {
             Logger.Warn($"Failed to create tray icon: {ex.Message}");
         }
+    }
+
+    static bool LooksLikeSvg(byte[] data)
+    {
+        // Peek first ~512 bytes as text, ignore BOM/whitespace
+        int probe = Math.Min(512, data.Length);
+        var head = Encoding.UTF8.GetString(data, 0, probe).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
+
+        // Quick checks: <svg ...> tag or the SVG namespace
+        return head.StartsWith("<svg", StringComparison.OrdinalIgnoreCase)
+            || head.Contains("http://www.w3.org/2000/svg", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void RestartApplication()

@@ -92,12 +92,14 @@ namespace Starboard.Guis
 
                     if (_preloadActive)
                     {
+                        _mobiOpen = true;
                         _preloadTime = MathF.Min(_preloadTime + dt, PreloadDuration);
                         if (_preloadTime >= PreloadDuration)
                         {
                             _preloadActive = false;
                             _isLoaded = true;
                             _phase = Phase.FadeOut;
+                            _mobiOpen = false;
                         }
                     }
                     break;
@@ -113,7 +115,6 @@ namespace Starboard.Guis
                     {
                         _phase = Phase.Done;
                         // hide the loading window completely now
-                        AppState.ShowPlayground = false;
                     }
                     break;
                 }
