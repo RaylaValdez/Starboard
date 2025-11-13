@@ -12,6 +12,12 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 ---
 
+## Known Issues
+
+- Cursor flicker when hovering over WebView2 region
+
+---
+
 ## 🧰 Technologies
 
 - **.NET 8.0**
