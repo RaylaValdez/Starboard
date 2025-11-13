@@ -12,6 +12,14 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 ---
 
+## ❌ Known Issues
+
+- Cursor flicker when hovering over WebView2 region
+- Due to Starboard not hooking or reading any memory from Star Citizen, mobiglass detection isn't solid. 
+
+
+---
+
 ## 🧰 Technologies
 
 - **.NET 8.0**
