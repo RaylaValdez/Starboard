@@ -10,6 +10,8 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 - No more tabbing in and out of the game, you can access all the information you'd need right in game, Starboard opens when you open your Mobiglass!
 - Preloaded with handy community made websites. 
 
+![Demo](http://server.triquetrahosting.uk:32045/imagehost/StarboardDemonstration.gif)
+
 ---
 
 ## ❌ Known Issues
