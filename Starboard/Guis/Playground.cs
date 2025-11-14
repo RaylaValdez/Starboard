@@ -11,8 +11,6 @@ namespace Starboard.Guis
         private static Rectangle _mobiFramePx;
         private static float _dpiScale = 1f;
 
-        private static readonly MobiPillButton _pill = new();
-
         private static bool _mobiOpen = false;
         private static bool _mobiOpenLastFrame = false;
 
@@ -26,16 +24,27 @@ namespace Starboard.Guis
         private enum Phase { FadeIn, Preload, FadeOut, Done }
         private static Phase _phase = Phase.FadeIn;
 
-        private static bool _isLoaded = false;        // mirrors completion for your status text
-        private static bool _preloadActive = true;    // drives the progress bar
+        private static bool _isLoaded = false;        
+        private static bool _preloadActive = true;    
         private static float _preloadTime = 0f;
 
-        private const float FadeInDuration = 2.0f;  // seconds
-        private const float PreloadDuration = 5.0f;  // seconds
-        private const float FadeOutDuration = 1.0f;  // seconds
+        private const float FadeInDuration = 0.25f;  
+        private const float PreloadDuration = 5.0f;  
+        private const float FadeOutDuration = 0.4f;  
 
         private static float _fadeInTime = 0f;
         private static float _fadeOutTime = 0f;
+
+        // --- StarboardMain fade knobs (hardcoded, tweak here) ---
+        private const float MainFadeInSeconds = 0.1f;
+        private const float MainFadeOutSeconds = 0.4f;
+        private static float _mainFadeT = 0f; 
+
+        // --- StarboardMain visibility during loading phases ---
+        private const bool ShowMainDuringFadeIn = false;
+        private const bool ShowMainDuringPreload = true;
+        private const bool ShowMainDuringFadeOut = false;
+
 
         public static void Initialize(
             IntPtr cassioTex,
@@ -59,6 +68,10 @@ namespace Starboard.Guis
             _preloadTime = 0f;
             _fadeInTime = 0f;
             _fadeOutTime = 0f;
+
+            _mainFadeT = 0f;
+            _mobiOpen = false;
+            _mobiOpenLastFrame = false;
         }
 
         public static void SetMobiFrame(Rectangle mobiFrame)
@@ -68,8 +81,18 @@ namespace Starboard.Guis
 
         public static void Draw(float dt)
         {
-            // --- Phase progression + global alpha ---
+            bool logicalMobiOpen = Helpers.CheckMobiglassOpen();
+
+            if (!logicalMobiOpen && _mobiOpenLastFrame)
+            {
+                StarboardMain.ResetOnMobiClosed();
+            }
+
             float globalAlpha = 1f;
+            bool overlayFromLoading = 
+                (_phase == Phase.FadeIn && ShowMainDuringFadeIn) ||
+                (_phase == Phase.Preload && ShowMainDuringPreload) ||
+                (_phase == Phase.FadeOut &&  ShowMainDuringFadeOut);
 
             switch (_phase)
             {
@@ -77,7 +100,6 @@ namespace Starboard.Guis
                 {
                     _fadeInTime = MathF.Min(_fadeInTime + dt, FadeInDuration);
                     float t = _fadeInTime / FadeInDuration;         // 0..1
-                    // smoothstep for nicer ease
                     globalAlpha = t * t * (3f - 2f * t);
 
                     if (_fadeInTime >= FadeInDuration)
@@ -92,14 +114,12 @@ namespace Starboard.Guis
 
                     if (_preloadActive)
                     {
-                        _mobiOpen = true;
                         _preloadTime = MathF.Min(_preloadTime + dt, PreloadDuration);
                         if (_preloadTime >= PreloadDuration)
                         {
                             _preloadActive = false;
                             _isLoaded = true;
                             _phase = Phase.FadeOut;
-                            _mobiOpen = false;
                         }
                     }
                     break;
@@ -114,25 +134,20 @@ namespace Starboard.Guis
                     if (_fadeOutTime >= FadeOutDuration)
                     {
                         _phase = Phase.Done;
-                        // hide the loading window completely now
                     }
                     break;
                 }
                 case Phase.Done:
                 {
-                    // Nothing to draw for the loading window anymore.
-                    // Still continue with main UI below if mobi is open.
                     break;
                 }
             }
 
-            // Draw the loading window for all phases except Done
             if (_phase != Phase.Done)
             {
                 ImGui.SetNextWindowSize(new Vector2(500f, 150f), ImGuiCond.Always);
                 ImGui.SetNextWindowPos(new Vector2(50f, 50f), ImGuiCond.Always);
 
-                // Apply global alpha for the fade effect (affects all contents)
                 ImGui.PushStyleVar(ImGuiStyleVar.Alpha, globalAlpha);
 
                 ImGui.Begin("##StarboardLoading",
@@ -171,7 +186,6 @@ namespace Starboard.Guis
 
                 ImGui.Dummy(new Vector2(0f, 6f * _dpiScale));
 
-                // Progress only during Preload (show full bar during FadeOut if you like)
                 if (_phase == Phase.Preload)
                 {
                     float t = _preloadTime / PreloadDuration;
@@ -181,7 +195,6 @@ namespace Starboard.Guis
                 }
                 else if (_phase == Phase.FadeOut)
                 {
-                    // Keep a full bar visible while fading out (looks nice)
                     ImGui.ProgressBar(1f, new Vector2(-1, 0), "100%");
                 }
 
@@ -197,20 +210,50 @@ namespace Starboard.Guis
                 ImGui.PopStyleVar(); // Alpha
             }
 
-            // --- Central mobiglass state logic continues as before ---
-            _mobiOpen = Helpers.CheckMobiglassOpen();
+            bool overlayRequested = overlayFromLoading || logicalMobiOpen;
 
-            if (!_mobiOpen && _mobiOpenLastFrame)
+            float idleTimeout = StarboardSettingsStore.Current.IdleCloseSeconds;
+            if (idleTimeout <= 0f)
+                idleTimeout = 15f;
+
+            bool idleCloseActive = (_phase == Phase.Done);
+            bool idleExpired = idleCloseActive && StarboardMain.SecondsSinceInteraction >= idleTimeout;
+
+            if (idleExpired && _mobiOpen)
             {
-                // Mobiglass just closed → reset main window state
                 StarboardMain.ResetOnMobiClosed();
+                Helpers.ForceCloseMobiglass();
+                logicalMobiOpen = false;
             }
-            _mobiOpenLastFrame = _mobiOpen;
 
-            if (_mobiOpen)
+            bool targetVisible = overlayRequested && !idleExpired;
+
+            float fadeInSec = MainFadeInSeconds;
+            float fadeOutSec = MainFadeOutSeconds;
+
+            if (fadeInSec <= 0.01f) fadeInSec = 0.01f;
+            if (fadeOutSec <= 0.01f) fadeOutSec = 0.01f;
+
+            if (targetVisible)
             {
-                StarboardMain.Draw(dt);
+                _mainFadeT = MathF.Min(1f, _mainFadeT + dt / fadeInSec);
             }
+            else
+            {
+                _mainFadeT = MathF.Max(0f, _mainFadeT - dt / fadeOutSec);
+            }
+
+            float mainAlpha = _mainFadeT * _mainFadeT * (3f - 2f * _mainFadeT);
+
+            bool drawMain = mainAlpha > 0.001f;
+
+            if (drawMain)
+            {
+                StarboardMain.Draw(dt, mainAlpha);
+            }
+
+            _mobiOpen = drawMain;
+            _mobiOpenLastFrame = _mobiOpen;
         }
     }
 }

@@ -9,15 +9,12 @@ namespace Starboard.GuiElements
 
         public static bool CheckMobiglassOpen()
         {
-            // --- Keyboard checks ---
             var settings = StarboardSettingsStore.Current;
 
-            // Using ImGuiInput since you already have it
             bool keyboardToggle =
                 ImGui.IsKeyPressed(settings.OpenMobiglassKeybind, false) ||
-                ImGui.IsKeyPressed(settings.OpenMobiMapKeybind,false) ||
-                ImGui.IsKeyPressed(settings.OpenMobiCommsKeybind, false)
-            ;
+                ImGui.IsKeyPressed(settings.OpenMobiMapKeybind, false) ||
+                ImGui.IsKeyPressed(settings.OpenMobiCommsKeybind, false);
 
             bool controllerToggle = false;
             while (ControllerInput.TryGetNextButtonPress(out var btn))
@@ -45,6 +42,11 @@ namespace Starboard.GuiElements
             return _mobiglassOpen;
         }
 
+        public static void ForceCloseMobiglass()
+        {
+            _mobiglassOpen = false;
+        }
+
         private static bool MatchesAnyControllerBinding(
             ControllerButton button,
             List<ControllerBinding> binds)
@@ -64,6 +66,5 @@ namespace Starboard.GuiElements
 
             return false;
         }
-
     }
 }

@@ -26,10 +26,8 @@ namespace Starboard.GuiElements
         {
             ImGui.PushID(id);
 
-            // Stable internal ID for this widget
             uint thisId = ImGui.GetID("##toggle_switch");
 
-            // Fallback sizing
             float height = size.Y > 0 ? size.Y : ImGui.GetFrameHeight();
             float width = size.X > 0 ? size.X : height * 2.4f;
             var trackSize = new Vector2(width, height);
@@ -38,7 +36,6 @@ namespace Starboard.GuiElements
             var dl = ImGui.GetWindowDrawList();
             float radius = height * 0.5f;
 
-            // Interaction area
             ImGui.InvisibleButton("##btn", trackSize);
             bool hovered = ImGui.IsItemHovered();
             bool clicked = ImGui.IsItemClicked();
@@ -47,63 +44,52 @@ namespace Starboard.GuiElements
             if (clicked)
                 value = !value;
 
-            // Animation t (0 = OFF, 1 = ON)
             float t = _animT.TryGetValue(thisId, out float stored) ? stored : (value ? 1f : 0f);
             float target = value ? 1f : 0f;
 
-            float speed = 12f; // animation speed
+            float speed = 12f;
             float dt = ImGui.GetIO().DeltaTime;
             t += (target - t) * MathF.Min(1f, speed * dt);
             _animT[thisId] = t;
 
-            // Colors
-            Vector4 colOnBg = new(0.00f, 0.78f, 0.60f, 1.00f); // teal-ish
-            Vector4 colOffBg = new(0.15f, 0.16f, 0.18f, 1.00f); // dark grey
-            Vector4 colBorder = new(0.90f, 0.90f, 0.95f, 1.00f); // light border
-            Vector4 colKnob = new(0.98f, 0.98f, 0.99f, 1.00f); // white-ish
+            Vector4 colOnBg = new(0.00f, 0.78f, 0.60f, 1.00f); 
+            Vector4 colOffBg = new(0.15f, 0.16f, 0.18f, 1.00f); 
+            Vector4 colBorder = new(0.90f, 0.90f, 0.95f, 1.00f); 
+            Vector4 colKnob = new(0.98f, 0.98f, 0.99f, 1.00f); 
 
-            // Slight hover brighten on background
             if (hovered)
             {
                 colOnBg = Lerp(colOnBg, new Vector4(1f, 1f, 1f, 1f), 0.10f);
                 colOffBg = Lerp(colOffBg, new Vector4(1f, 1f, 1f, 1f), 0.08f);
             }
 
-            // Background color lerp between off/on
             Vector4 bg = Lerp(colOffBg, colOnBg, t);
 
             uint bgCol = ImGui.GetColorU32(bg);
             uint borderCol = ImGui.GetColorU32(colBorder);
             uint knobCol = ImGui.GetColorU32(colKnob);
 
-            // Track with border
             dl.AddRectFilled(pos, pos + trackSize, bgCol, radius);
             dl.AddRect(pos, pos + trackSize, borderCol, radius, ImDrawFlags.None, 1.5f);
 
-            // Knob position (animated)
             float innerWidth = width - 2f * radius;
             float knobX = pos.X + radius + innerWidth * t;
             Vector2 knobCenter = new(knobX, pos.Y + radius);
             float knobRadius = radius - 2.0f;
 
-            // Soft shadow behind knob
             dl.AddCircleFilled(knobCenter + new Vector2(0, 1.5f), knobRadius + 1.5f,
                                ImGui.GetColorU32(new Vector4(0, 0, 0, 0.35f)), 24);
 
-            // Knob
             dl.AddCircleFilled(knobCenter, knobRadius, knobCol, 24);
 
-            // Text
-            // Left center for "ON", right center for "OFF"
             Vector2 onCenter = new(pos.X + width * 0.30f, pos.Y + height * 0.50f);
             Vector2 offCenter = new(pos.X + width * 0.70f, pos.Y + height * 0.50f);
 
-            // Alpha fades with t
             float onAlpha = Math.Clamp((t - 0.4f) / 0.2f, 0f, 1f);
             float offAlpha = Math.Clamp((0.6f - t) / 0.2f, 0f, 1f);
 
-            Vector4 onTextCol = new(0.05f, 0.07f, 0.09f, onAlpha);   // dark text
-            Vector4 offTextCol = new(0.80f, 0.80f, 0.85f, offAlpha);  // light/grey
+            Vector4 onTextCol = new(0.05f, 0.07f, 0.09f, onAlpha);  
+            Vector4 offTextCol = new(0.80f, 0.80f, 0.85f, offAlpha);
 
             if (!string.IsNullOrEmpty(onText))
             {

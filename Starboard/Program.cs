@@ -27,7 +27,7 @@ internal static class Program
     private static readonly Stopwatch _animClock = new();
     private static double _lastAnimSec = 0;
     private static float _dt = 1f / 120f;
-   
+
     // DPI scale from target window
     private static float _dpiScale = 1.0f;
 
@@ -51,6 +51,8 @@ internal static class Program
 
     private static HWND _targetHwnd;
 
+    private static IntPtr _lastNonWebCursor = IntPtr.Zero;
+
     //Tray
     private static NotifyIcon? _trayIcon;
     private static CancellationTokenSource? _ctsForTray;
@@ -61,7 +63,6 @@ internal static class Program
         Logger.Info("Starboard starting...");
         _animClock.Start();
 
-        // Find Star Citizen main window via Overlay-Renderer's helper
         IntPtr rawHwnd = FindProcess.WaitForMainWindow("StarCitizen", retries: 40, delayMs: 500);
         if (rawHwnd == IntPtr.Zero)
         {
@@ -82,7 +83,6 @@ internal static class Program
 
         ImGuiStylePresets.ApplyDark();
 
-        // Load icon texture
         try
         {
             _cassioTex = imguiRenderer.CreateTextureFromFile(
@@ -97,7 +97,6 @@ internal static class Program
             _cassioTex = IntPtr.Zero;
         }
 
-        // after _cassioTex load, before you Initialize(...) the windows
         try
         {
             FaviconManager.TextureUploader = bytes =>
@@ -146,22 +145,14 @@ internal static class Program
                         }
                         return imguiRenderer.CreateTextureFromBitmap(dst, out _, out _, pointSampling: true);
                     }
-
-
-                        // Non-SVG path (ICO/PNG/JPEG etc.) — load directly from bytes
-                        using var nonSvgMs = new MemoryStream(bytes);
-                    using var bmp2 = new Bitmap(nonSvgMs);
-                    return imguiRenderer.CreateTextureFromBitmap(bmp2, out _, out _);
                 }
                 catch
                 {
-                    // Fallback to your previous temp-file route only if needed
                     try
                     {
                         var hash = System.Security.Cryptography.SHA1.HashData(bytes);
                         var name = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
 
-                        // Pick an extension purely for debugging; loader reads headers anyway
                         var dir = Path.Combine(Path.GetTempPath(), "Starboard", "favicons");
                         Directory.CreateDirectory(dir);
                         var file = Path.Combine(dir, name + ".bin");
@@ -181,10 +172,8 @@ internal static class Program
             Logger.Warn($"Failed to set favicon uploader: {ex.Message}");
         }
 
-        // Initial mobi frame based on default client size
         _mobiFramePx = ComputeMobiFrame(overlay.ClientWidth, overlay.ClientHeight);
 
-        // DPI scale from target window
         try
         {
             uint dpi = PInvoke.GetDpiForWindow(targetHwnd);
@@ -235,7 +224,6 @@ internal static class Program
 
         CreateTrayIcon();
 
-        // Track Star Citizen window: keep overlay aligned & update frame size
         bool firstSize = true;
         var trackingTask = WindowTracker.StartTrackingAsync(
             targetHwnd,
@@ -257,13 +245,12 @@ internal static class Program
                 }
             });
 
-        // Close overlay when Star Citizen exits
         TryHookProcessExit(targetHwnd, overlay);
 
         RunMessageAndRenderLoop(overlay, d3dHost, imguiRenderer, cts);
 
         cts.Cancel();
-        try { trackingTask.Wait(500); } catch { /* ignore */ }
+        try { trackingTask.Wait(500); } catch { }
 
         if (_trayIcon != null)
         {
@@ -285,7 +272,6 @@ internal static class Program
 
         while (!cts.IsCancellationRequested)
         {
-            // Pump Win32 messages
             while (PInvoke.PeekMessage(out msg, HWND.Null, 0, 0,
                        PEEK_MESSAGE_REMOVE_TYPE.PM_REMOVE))
             {
@@ -305,22 +291,17 @@ internal static class Program
                 return;
             }
 
-            // Per-frame dt for animation
             double now = _animClock.Elapsed.TotalSeconds;
             _dt = (float)Math.Clamp(now - _lastAnimSec, 0, 0.1);
             _lastAnimSec = now;
 
-            // Inside RunMessageAndRenderLoop, each frame BEFORE you start drawing windows
             FaviconManager.ProcessPendingUploads();
 
-
-            // Render frame
             d3dHost.BeginFrame();
             imguiRenderer.NewFrame(overlay.ClientWidth, overlay.ClientHeight);
 
             ImGuiInput.UpdateMouse(overlay);
             ImGuiInput.UpdateKeyboard();
-            //ImGuiInput.UseOsCursor(true);
 
             ControllerInput.Update();
             WebBrowserManager.BeginFrame();
@@ -343,16 +324,35 @@ internal static class Program
             imguiRenderer.Render(d3dHost.SwapChain);
             d3dHost.Present();
 
-            if (fg == overlay.Hwnd && !_targetHwnd.IsNull && !WebBrowserManager.MouseOverWebRegion)
+            if (!WebBrowserManager.MouseOverWebRegion)
             {
-                // Only steal focus back to Star Citizen if the mouse
-                // is *not* currently over any web region.
-                PInvoke.SetForegroundWindow(_targetHwnd);
+                try
+                {
+                    _lastNonWebCursor = PInvoke.GetCursor();
+                }
+                catch
+                {
+
+                }
+            }
+            else
+            {
+                if (_lastNonWebCursor != IntPtr.Zero)
+                {
+                    try
+                    {
+                        PInvoke.SetCursor((HCURSOR)_lastNonWebCursor);
+                    }
+                    catch
+                    {
+
+                    }
+                }
             }
 
-            if (WebBrowserManager.MouseOverWebRegion)
+            if (fg == overlay.Hwnd && !_targetHwnd.IsNull && !WebBrowserManager.MouseOverWebRegion)
             {
-                ImGuiInput.ForceHideOsCursor();
+                PInvoke.SetForegroundWindow(_targetHwnd);
             }
 
             Thread.Sleep(16);
@@ -439,11 +439,9 @@ internal static class Program
 
     static bool LooksLikeSvg(byte[] data)
     {
-        // Peek first ~512 bytes as text, ignore BOM/whitespace
         int probe = Math.Min(512, data.Length);
         var head = Encoding.UTF8.GetString(data, 0, probe).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
 
-        // Quick checks: <svg ...> tag or the SVG namespace
         return head.StartsWith("<svg", StringComparison.OrdinalIgnoreCase)
             || head.Contains("http://www.w3.org/2000/svg", StringComparison.OrdinalIgnoreCase);
     }
@@ -482,7 +480,7 @@ internal static class Program
             _trayIcon?.Dispose();
             _trayIcon = null;
         }
-        catch {}
+        catch { }
 
         Environment.Exit(0);
     }

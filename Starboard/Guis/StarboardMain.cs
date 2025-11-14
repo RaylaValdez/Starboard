@@ -13,8 +13,6 @@ namespace Starboard.Guis
         private static Rectangle _mobiFramePx;
         private static float _dpiScale = 1f;
 
-        private static readonly MobiPillButton _pill = new();
-
         private static float _hoverAnim = 0f;
         private static bool _wasHoveredLastFrame = false;
 
@@ -26,12 +24,16 @@ namespace Starboard.Guis
 
         private static IntPtr _cassioTex = IntPtr.Zero;
 
-        // Click-to-expand state
-        private static bool _isExpanded = false;   // true = centered
-        private static float _expandAnim = 0f;     // 0 = bottom, 1 = center
+        private static bool _isExpanded = false;  
+        private static float _expandAnim = 0f;    
 
         private static readonly List<IStarboardApplet> _applets = new();
-        private static int _selectedAppletIndex = -1; // -1 = none selected
+        private static int _selectedAppletIndex = -1; 
+
+        private static float _secondsSinceInteraction = 0f;
+
+        public static float SecondsSinceInteraction => _secondsSinceInteraction;
+
 
         public static void Initialize(
             IntPtr cassioTex,
@@ -47,8 +49,6 @@ namespace Starboard.Guis
             _orbiRegFont = font;
             _orbiRegFontSmall = smallFont;
             _cassioTex = cassioTex;
-
-            _pill.Initialize(cassioTex, dpiScale, mobiFrame);
 
             _applets.Clear();
 
@@ -72,7 +72,6 @@ namespace Starboard.Guis
                 }
                 catch
                 {
-                    // ignore broken applets so UX survives
                 }
             }
 
@@ -82,7 +81,6 @@ namespace Starboard.Guis
             foreach (var app in _applets)
                 app.Initialize();
 
-            // Start with NO applet selected, and no active webview
             _selectedAppletIndex = -1;
             WebBrowserManager.SetActiveApplet(null);
         }
@@ -90,7 +88,6 @@ namespace Starboard.Guis
         public static void SetMobiFrame(Rectangle mobiFrame)
         {
             _mobiFramePx = mobiFrame;
-            _pill.UpdateMobiFrame(mobiFrame);
         }
 
         public static void ResetOnMobiClosed()
@@ -101,12 +98,14 @@ namespace Starboard.Guis
             _wasHoveredLastFrame = false;
             _selectedAppletIndex = -1;
             WebBrowserManager.SetActiveApplet(null);
-
+            _secondsSinceInteraction = 0f;
         }
 
-        public static void Draw(float dt)
+        public static void Draw(float dt, float globalAlpha)
         {
-            // Current selection at *start* of frame
+            globalAlpha = Math.Clamp(globalAlpha, 0f, 1f);
+            ImGui.PushStyleVar(ImGuiStyleVar.Alpha, globalAlpha);
+
             IStarboardApplet? selectedApplet = null;
             bool isWebApplet = false;
 
@@ -116,15 +115,14 @@ namespace Starboard.Guis
                 isWebApplet = selectedApplet.UsesWebView;
             }
 
-            // Frozen for this frame – used only for balanced Push/Pop + channels.
+            bool interactedThisFrame = false;
+
             bool webForBg = isWebApplet;
 
-            // Base window size / position
             var winSize = new Vector2(_mobiFramePx.Width * 0.85f, _mobiFramePx.Height * 0.9f);
             float centerX = _mobiFramePx.Left + (_mobiFramePx.Width - winSize.X) / 2f;
             float restY = _mobiFramePx.Top + _mobiFramePx.Height * 0.965f;
 
-            // Hover anim
             bool targetHover = _wasHoveredLastFrame;
             float hoverTarget = targetHover ? 1f : 0f;
             const float hoverSpeed = 8f;
@@ -135,7 +133,6 @@ namespace Starboard.Guis
             float lift = _hoverLiftPx * _dpiScale;
             float baseY = restY - _hoverAnim * lift;
 
-            // Expand anim
             const float expandSpeed = 6f;
             float expandTarget = _isExpanded ? 1f : 0f;
             float et = dt * expandSpeed;
@@ -151,7 +148,6 @@ namespace Starboard.Guis
             Vector4 baseWindowBg = style.Colors[(int)ImGuiCol.WindowBg];
             Vector4 baseChildBg = style.Colors[(int)ImGuiCol.ChildBg];
 
-            // For web applets we make the window bg fully transparent and draw our own
             if (webForBg)
             {
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0f, 0f, 0f, 0f));
@@ -167,18 +163,27 @@ namespace Starboard.Guis
                 ImGuiWindowFlags.NoSavedSettings |
                 ImGuiWindowFlags.NoTitleBar);
 
-            // Split draw channels so we can keep the cookie-cut bg behind the UI
             ImDrawListPtr dlWindow = ImGui.GetWindowDrawList();
             if (webForBg)
             {
                 dlWindow.ChannelsSplit(2);
-                // Channel 0 = background, 1 = normal UI
                 dlWindow.ChannelsSetCurrent(1);
             }
 
             // Hover / click handling
             bool hoveredThisFrame = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.NoPopupHierarchy);
             bool clickedLeft = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+
+            if (hoveredThisFrame)
+                interactedThisFrame = true;
+
+            if (hoveredThisFrame &&
+                (ImGui.IsMouseDown(ImGuiMouseButton.Left) ||
+                 ImGui.IsMouseDown(ImGuiMouseButton.Right) ||
+                 ImGui.IsMouseDown(ImGuiMouseButton.Middle)))
+            {
+                interactedThisFrame = true;
+            }
 
             if (clickedLeft)
             {
@@ -198,9 +203,6 @@ namespace Starboard.Guis
 
             float windowWidth = ImGui.GetWindowSize().X;
 
-            // -----------------------------------------------------------------
-            // HEADER: icon + text
-            // -----------------------------------------------------------------
             if (_cassioTex != IntPtr.Zero)
             {
                 float iconH = 64f * _dpiScale;
@@ -230,12 +232,8 @@ namespace Starboard.Guis
                     ImGui.PopFont();
             }
 
-            // Space under header
             ImGui.Dummy(new Vector2(0f, 8f * _dpiScale));
 
-            // -----------------------------------------------------------------
-            // PANELS: layout math
-            // -----------------------------------------------------------------
             float marginX = 20f * _dpiScale;
             float marginBottom = 20f * _dpiScale;
             float gapBetween = 20f * _dpiScale;
@@ -256,15 +254,11 @@ namespace Starboard.Guis
             float rightTopOffset = 60f * _dpiScale;
             float rightHeight = availHeight + rightTopOffset;
 
-            // --- back/home strip sizing ---
             float buttonHeight = 32f * _dpiScale;
             float buttonSpacing = 8f * _dpiScale;
 
-            // Left panel height: leave room for buttons so that
-            // buttons bottom == right child bottom.
             float leftHeight = Math.Max(0f, availHeight - (buttonHeight + buttonSpacing));
 
-            // Compute right panel position (window-local)
             Vector2 rightPos = panelStart - new Vector2(0f, 60f);
             rightPos.X += leftWidth + gapBetween;
 
@@ -317,16 +311,11 @@ namespace Starboard.Guis
                     bgCol,
                     0.0f);
 
-                // Outer border of the main card (with rounding)
                 dlWindow.AddRect(cardMin, cardMax, borderCol, rounding, ImDrawFlags.None, 2f * _dpiScale);
 
-                // Back to normal UI channel
                 dlWindow.ChannelsSetCurrent(1);
             }
 
-            // =========================
-            // LEFT PANEL
-            // =========================
             ImGui.PushStyleColor(ImGuiCol.ChildBg, isWebApplet ? new Vector4(0, 0, 0, 0) : baseChildBg);
             ImGui.PushStyleVar(ImGuiStyleVar.ChildRounding, 6f * _dpiScale);
             ImGui.PushStyleVar(ImGuiStyleVar.ChildBorderSize, 2f * _dpiScale);
@@ -355,8 +344,8 @@ namespace Starboard.Guis
                         ImGuiSelectableFlags.None,
                         new Vector2(0, rowHeight)))
                 {
-                    // Update selection; web/background for this applet
-                    // will take effect next frame.
+                    interactedThisFrame = true;
+
                     _selectedAppletIndex = i;
 
                     if (applet.UsesWebView)
@@ -392,7 +381,6 @@ namespace Starboard.Guis
                 Vector2 iconMin = rowMin + new Vector2(iconPadX, iconPadY);
                 Vector2 iconMax = iconMin + new Vector2(iconSizePx, iconSizePx);
 
-                // Try favicon
                 IntPtr favTex = FaviconManager.GetOrRequest(applet.Id, applet.FaviconUrl);
 
                 if (favTex != IntPtr.Zero)
@@ -407,7 +395,6 @@ namespace Starboard.Guis
                 }
                 else
                 {
-                    // Fallback: your old square outline
                     uint iconCol = ImGui.GetColorU32(new Vector4(0.85f, 0.85f, 0.9f, 1f));
                     dlLeft.AddRect(iconMin, iconMax, iconCol, 6f * _dpiScale, ImDrawFlags.None, 2f);
                 }
@@ -440,14 +427,38 @@ namespace Starboard.Guis
             ImGui.PopStyleVar(2);
             ImGui.PopStyleColor();
 
-            // =========================
-            // BACK + HOME BUTTONS
-            // =========================
             Vector2 buttonsPos = new Vector2(
                 panelStart.X,
                 panelStart.Y + leftHeight + buttonSpacing);
 
             ImGui.SetCursorPos(buttonsPos);
+
+            unsafe
+            {
+                float padX = 16f * _dpiScale * 2f;
+
+                ImFontPtr bigFont = _orbiRegFont;
+                ImFontPtr smallFont = _orbiRegFontSmall;
+
+                float backBig = bigFont.CalcTextSizeA(bigFont.FontSize, float.MaxValue, 0f, "Back").X + padX;
+                float homeBig = bigFont.CalcTextSizeA(bigFont.FontSize, float.MaxValue, 0f, "Home").X + padX;
+                float setBig = bigFont.CalcTextSizeA(bigFont.FontSize, float.MaxValue, 0f, "Settings").X + padX;
+                float totalBig = backBig + homeBig + setBig + (ImGui.GetStyle().ItemSpacing.X * 2f);
+
+                float backSm = smallFont.CalcTextSizeA(smallFont.FontSize, float.MaxValue, 0f, "Back").X + padX;
+                float homeSm = smallFont.CalcTextSizeA(smallFont.FontSize, float.MaxValue, 0f, "Home").X + padX;
+                float setSm = smallFont.CalcTextSizeA(smallFont.FontSize, float.MaxValue, 0f, "Settings").X + padX;
+                float totalSmall = backSm + homeSm + setSm + (ImGui.GetStyle().ItemSpacing.X * 2f);
+
+                float spaceToRightPanel = rightPos.X - buttonsPos.X;
+
+                bool useSmallFont = totalBig > spaceToRightPanel;
+
+                if (useSmallFont && smallFont.NativePtr != null)
+                    ImGui.PushFont(smallFont);
+                else if (!useSmallFont && bigFont.NativePtr != null)
+                    ImGui.PushFont(bigFont);
+            }
 
             ImGui.PushStyleVar(ImGuiStyleVar.FrameRounding, 6f * _dpiScale);
             ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(16f * _dpiScale, 6f * _dpiScale));
@@ -458,23 +469,18 @@ namespace Starboard.Guis
                              WebBrowserManager.ActiveCanGoBack();
 
             ImGui.BeginDisabled(!canGoBack);
-
-            unsafe
+            if (ImGui.Button("Back"))
             {
-                if (_orbiRegFont.NativePtr != null)
-                    ImGui.PushFont(_orbiRegFont);
-            }
-
-            if (ImGui.Button("Back", new Vector2(0, buttonHeight)))
-            {
+                interactedThisFrame = true;
                 WebBrowserManager.GoBackOnActiveApplet();
             }
             ImGui.EndDisabled();
 
-            ImGui.SameLine();           
+            ImGui.SameLine();
 
-            if (ImGui.Button("Home", new Vector2(0, buttonHeight)))
+            if (ImGui.Button("Home"))
             {
+                interactedThisFrame = true;
                 _selectedAppletIndex = -1;
                 selectedApplet = null;
                 isWebApplet = false;
@@ -483,29 +489,22 @@ namespace Starboard.Guis
 
             ImGui.SameLine();
 
-            if (ImGui.Button("Settings", new Vector2(0, buttonHeight)))
+            if (ImGui.Button("Settings"))
             {
+                interactedThisFrame = true;
                 FirstStartWindow.OpenToPage(1);
             }
 
-            unsafe
-            {
-                if (_orbiRegFont.NativePtr != null)
-                    ImGui.PopFont();
-            }
-
+            // pop style + font
             ImGui.PopStyleVar(2);
+            ImGui.PopFont();
 
-            // =========================
-            // RIGHT PANEL (transparent + zero padding for web applets)
-            // =========================
             ImGui.SetCursorPos(rightPos);
 
             ImGui.PushStyleColor(ImGuiCol.ChildBg, isWebApplet ? new Vector4(0, 0, 0, 0) : baseChildBg);
             ImGui.PushStyleVar(ImGuiStyleVar.ChildRounding, 6f * _dpiScale);
             ImGui.PushStyleVar(ImGuiStyleVar.ChildBorderSize, 2f * _dpiScale);
 
-            // kill padding so the webview hugs the border
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding,
                 isWebApplet ? Vector2.Zero : style.WindowPadding);
 
@@ -528,7 +527,38 @@ namespace Starboard.Guis
             }
             else
             {
-                ImGui.TextDisabled("Select an applet on the left to begin.");
+                var dlRight = ImGui.GetWindowDrawList();
+                Vector2 winPos = ImGui.GetWindowPos();   
+                Vector2 childSize = ImGui.GetWindowSize();
+                Vector2 center = winPos + childSize * 0.5f;
+
+                // how far in from each corner
+                float cornerPadding = 60f * _dpiScale;
+                float innerFactor = 0.65f;             
+                float thickness = 3f * _dpiScale;
+                uint lineCol = ImGui.GetColorU32(ImGuiCol.Border);
+
+                Vector2 topLeftOuter = winPos + new Vector2(cornerPadding, cornerPadding);
+                Vector2 topRightOuter = winPos + new Vector2(childSize.X - cornerPadding, cornerPadding);
+                Vector2 bottomLeftOuter = winPos + new Vector2(cornerPadding, childSize.Y - cornerPadding);
+                Vector2 bottomRightOuter = winPos + new Vector2(childSize.X - cornerPadding, childSize.Y - cornerPadding);
+
+                Vector2 topLeftInner = topLeftOuter + (center - topLeftOuter) * innerFactor;
+                Vector2 topRightInner = topRightOuter + (center - topRightOuter) * innerFactor;
+                Vector2 bottomLeftInner = bottomLeftOuter + (center - bottomLeftOuter) * innerFactor;
+                Vector2 bottomRightInner = bottomRightOuter + (center - bottomRightOuter) * innerFactor;
+
+                dlRight.AddLine(topLeftOuter, topLeftInner, lineCol, thickness);
+                dlRight.AddLine(topRightOuter, topRightInner, lineCol, thickness);
+                dlRight.AddLine(bottomLeftOuter, bottomLeftInner, lineCol, thickness);
+                dlRight.AddLine(bottomRightOuter, bottomRightInner, lineCol, thickness);
+
+                const string placeholder = "Select an applet on the left to begin.";
+                Vector2 textSize = ImGui.CalcTextSize(placeholder);
+                Vector2 textPosLocal = (childSize - textSize) * 0.5f;
+
+                ImGui.SetCursorPos(textPosLocal);
+                ImGui.TextDisabled(placeholder);
             }
 
             unsafe
@@ -539,21 +569,30 @@ namespace Starboard.Guis
 
             ImGui.EndChild();
 
-            ImGui.PopStyleVar(3); // WindowPadding + ChildBorderSize + ChildRounding
+            ImGui.PopStyleVar(3);
             ImGui.PopStyleColor();
 
             _wasHoveredLastFrame = hoveredThisFrame;
 
-            // Merge channels + pop transparent WindowBg *only* if we
-            // actually pushed them at the start of the frame.
             if (webForBg)
             {
                 dlWindow.ChannelsMerge();
-                ImGui.PopStyleColor(); // WindowBg
+                ImGui.PopStyleColor(); 
             }
 
             HitTestRegions.AddCurrentWindow();
+
+            if (interactedThisFrame)
+            {
+                _secondsSinceInteraction = 0f;
+            }
+            else
+            {
+                _secondsSinceInteraction += dt;
+            }
+
             ImGui.End();
+            ImGui.PopStyleVar();
         }
     }
 }

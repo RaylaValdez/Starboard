@@ -4,3 +4,4 @@ release/
 CopilotIndices/
 *.vsidx
 /.vs
+Properties/

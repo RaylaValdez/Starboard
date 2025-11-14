@@ -25,7 +25,7 @@ Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. 
     <PackageTags>gaming; overlay; </PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <Version>0.0.17.14</Version>
+    <Version>0.0.17.15</Version>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
   </PropertyGroup>

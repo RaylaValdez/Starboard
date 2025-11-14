@@ -31,7 +31,6 @@ namespace Starboard.GuiElements
 
             if (isActive)
             {
-                // Escape cancels
                 if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
                 {
                     _activeId = 0;

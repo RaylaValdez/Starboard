@@ -27,7 +27,8 @@ internal static class FirstStartWindow
     private static bool _usesJoypad;
     private static bool _firstRunComplete;
 
-    // Controller bindings (multiple per action)
+    private static float _idleCloseSeconds = 15f;
+
     private static List<ControllerBinding> _openMobiglassControllerBinds = new();
     private static List<ControllerBinding> _openMobimapControllerBinds = new();
     private static List<ControllerBinding> _openMobicommsControllerBinds = new();
@@ -66,7 +67,8 @@ internal static class FirstStartWindow
         _usesJoypad = StarboardSettingsStore.Current.UsesJoyPad;
         _firstRunComplete = StarboardSettingsStore.Current.FirstRunCompleted;
 
-        // Copy controller lists and ensure they're sane
+        _idleCloseSeconds = StarboardSettingsStore.Current.IdleCloseSeconds > 0 ? StarboardSettingsStore.Current.IdleCloseSeconds : 15f;
+
         _openMobiglassControllerBinds =
             StarboardSettingsStore.Current.OpenMobiglassControllerBinds ?? new List<ControllerBinding> { new ControllerBinding() };
         _openMobimapControllerBinds =
@@ -81,7 +83,6 @@ internal static class FirstStartWindow
 
     public static void Draw()
     {
-        // Computed Middle Rect
         var winSize = new Vector2(_mobiFramePx.Width / 3, _mobiFramePx.Height * 0.9f);
         var centerX = _mobiFramePx.Left + (_mobiFramePx.Width - winSize.X) / 2;
         var centerY = _mobiFramePx.Top + (_mobiFramePx.Height - winSize.Y) / 2;
@@ -280,6 +281,31 @@ internal static class FirstStartWindow
                     StarboardSettingsStore.Save();
                 }
 
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                ImGui.TextWrapped("Auto-close Starboard after inactivity:");
+
+                float minSeconds = 5f;
+                float maxSeconds = 300f;
+
+                float idleSeconds = _idleCloseSeconds;
+
+                float sliderWidth = buttonSize.X * 2f;
+                ImGui.SetCursorPosX(windowWidth - sliderWidth - padding);
+                ImGui.PushItemWidth(sliderWidth);
+
+                if (ImGui.SliderFloat("##IdleTimeout", ref idleSeconds, minSeconds, maxSeconds, "%.0f seconds"))
+                {
+                    idleSeconds = Math.Clamp(idleSeconds, minSeconds, maxSeconds);
+                    _idleCloseSeconds = idleSeconds;
+                    StarboardSettingsStore.Current.IdleCloseSeconds = _idleCloseSeconds;
+                    StarboardSettingsStore.Save();
+                }
+
+                ImGui.PopItemWidth();
+
                 ImGui.SetCursorPosY(windowHeight * 0.8f);
                 ImGui.Separator();
                 ImGui.Spacing();
@@ -292,16 +318,20 @@ internal static class FirstStartWindow
                     if (_orbiRegFont.NativePtr != null)
                         ImGui.PopFont();
                 }
+
                 unsafe
                 {
                     if (_orbiRegFontSmall.NativePtr != null)
                         ImGui.PushFont(_orbiRegFontSmall);
                 }
+
                 if (ToggleSwitch.Draw("UsesJoypad", toggleSize, ref _usesJoypad, "YES", "NO"))
                 {
                     StarboardSettingsStore.Current.UsesJoyPad = _usesJoypad;
                     StarboardSettingsStore.Save();
                 }
+
+
                 unsafe
                 {
                     if (_orbiRegFontSmall.NativePtr != null)
@@ -472,11 +502,9 @@ internal static class FirstStartWindow
 
         var style = ImGui.GetStyle();
 
-        // We're already on the same line as the label.
         float rowStartX = ImGui.GetCursorPosX();
         float rowStartY = ImGui.GetCursorPosY();
 
-        // Remaining width to the right of the label (this is a WIDTH)
         float availWidth = ImGui.GetContentRegionAvail().X;
         if (availWidth <= 0f)
         {
@@ -486,17 +514,14 @@ internal static class FirstStartWindow
 
         float rowHeight = buttonSize.Y + style.FramePadding.Y * 2f;
 
-        // '+' button metrics
         float plusTextWidth = ImGui.CalcTextSize("+").X;
         float plusWidth = plusTextWidth + style.FramePadding.X * 2f;
-        float gap = plusWidth * 0.5f; // desired gap between last bind and '+'
+        float gap = plusWidth * 0.5f;
 
-        // Visible scroll area so: [child] + gap + [plus] == availWidth
         float buttonsRegionWidth = availWidth - plusWidth - gap;
         if (buttonsRegionWidth < 1f)
             buttonsRegionWidth = 1f;
 
-        // Total width of all bind buttons (content width)
         float buttonsTotalWidth = 0f;
         if (binds.Count > 0)
         {
@@ -505,7 +530,6 @@ internal static class FirstStartWindow
                 (binds.Count - 1) * style.ItemInnerSpacing.X;
         }
 
-        // Virtual content width => enables horizontal scrolling
         float contentWidth = Math.Max(buttonsRegionWidth, buttonsTotalWidth);
 
         // ----- SCROLLABLE CHILD (RIGHT-ALIGNED, INVISIBLE SCROLLBAR) -----
@@ -524,7 +548,6 @@ internal static class FirstStartWindow
             ImGuiChildFlags.None,
             ImGuiWindowFlags.NoScrollbar);
 
-        // Right-align inside the visible region when not scrolled
         float startX = 0f;
         if (buttonsTotalWidth < buttonsRegionWidth)
             startX = buttonsRegionWidth - buttonsTotalWidth;
@@ -542,7 +565,6 @@ internal static class FirstStartWindow
                 changed = true;
             }
 
-            // Right-click to remove
             if (ImGui.IsItemHovered() && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
             {
                 if (i > 1)
@@ -558,11 +580,9 @@ internal static class FirstStartWindow
 
         ImGui.EndChild();
 
-        ImGui.PopStyleVar();   // WindowPadding
-        ImGui.PopStyleColor(5); // ChildBg + 4 scrollbar colors
-                                // ----------------------------------------------------
+        ImGui.PopStyleVar();
+        ImGui.PopStyleColor(5);
 
-        // '+' flush to the right edge of the content region, same Y as row
         float plusX = rowStartX + availWidth - plusWidth;
         ImGui.SetCursorPos(new Vector2(plusX, rowStartY));
 

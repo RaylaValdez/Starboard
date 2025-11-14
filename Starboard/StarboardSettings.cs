@@ -23,6 +23,7 @@ namespace Starboard
         public List<ControllerBinding> OpenMobiglassControllerBinds { get; set; } = new() { new ControllerBinding() };
         public List<ControllerBinding> OpenMobimapControllerBinds { get; set; } = new() { new ControllerBinding() };
         public List<ControllerBinding> OpenMobicommsControllerBinds { get; set; } = new() { new ControllerBinding() };
+        public float IdleCloseSeconds { get; set; } = 15f;
     }
 
     internal sealed class StarboardSettingsStore
@@ -54,7 +55,6 @@ namespace Starboard
                 if (loaded != null)
                     Current = loaded;
 
-                // Ensure controller lists are non-null and have at least one entry
                 if (Current.OpenMobiglassControllerBinds == null || Current.OpenMobiglassControllerBinds.Count == 0)
                     Current.OpenMobiglassControllerBinds = new List<ControllerBinding> { new ControllerBinding() };
 
@@ -63,6 +63,9 @@ namespace Starboard
 
                 if (Current.OpenMobicommsControllerBinds == null || Current.OpenMobicommsControllerBinds.Count == 0)
                     Current.OpenMobicommsControllerBinds = new List<ControllerBinding> { new ControllerBinding() };
+
+                if (Current.IdleCloseSeconds <= 0)
+                    Current.IdleCloseSeconds = 15f;
             }
             catch (Exception ex)
             {

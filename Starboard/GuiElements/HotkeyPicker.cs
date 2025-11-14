@@ -7,15 +7,12 @@ namespace Starboard.GuiElements
 {
     internal static class HotkeyPicker
     {
-        // Which control (by ImGui ID) is currently capturing, 0 = none
         private static uint _activeId = 0;
 
         public static bool Draw(string label, Vector2 size, ref VIRTUAL_KEY boundVk, ref ImGuiKey boundKey)
         {
-            // Make this widget’s ID scope unique per label
             ImGui.PushID(label);
 
-            // Use a *stable* internal ID for this picker
             uint thisId = ImGui.GetID("##hotkey_picker");
 
             bool isActive = _activeId == thisId;
@@ -28,11 +25,8 @@ namespace Starboard.GuiElements
             else
                 displayText = boundKey.ToString();
 
-            // Render the button. Note: visible text can change,
-            // but ID is based on "##hotkey_picker", not the text.
             if (ImGui.Button(displayText, size))
             {
-                // Clicking sets this picker as the active one
                 _activeId = thisId;
                 isActive = true;
             }
@@ -41,7 +35,6 @@ namespace Starboard.GuiElements
 
             if (isActive)
             {
-                // ESC cancels capture
                 if (ImGui.IsKeyPressed(ImGuiKey.Escape, false))
                 {
                     _activeId = 0;
@@ -50,7 +43,7 @@ namespace Starboard.GuiElements
                 {
                     boundVk = vk;
                     boundKey = imguiKey;
-                    _activeId = 0;   // done capturing
+                    _activeId = 0;   
                     changed = true;
                 }
             }
