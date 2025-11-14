@@ -5,3 +5,4 @@ CopilotIndices/
 *.vsidx
 /.vs
 Properties/
+/Publishes
