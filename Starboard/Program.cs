@@ -60,7 +60,7 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        Logger.Info("Starboard starting...");
+        //Logger.Info("Starboard starting...");
         _animClock.Start();
 
         IntPtr rawHwnd = FindProcess.WaitForMainWindow("StarCitizen", retries: 40, delayMs: 500);
@@ -74,7 +74,7 @@ internal static class Program
         _targetHwnd = targetHwnd;
         unsafe
         {
-            Logger.Info($"Attached to StarCitizen window 0x{(nuint)targetHwnd.Value:X}");
+            //Logger.Info($"Attached to StarCitizen window 0x{(nuint)targetHwnd.Value:X}");
         }
 
         using var overlay = new OverlayWindow(targetHwnd);
@@ -89,7 +89,7 @@ internal static class Program
                 Path.Combine("Assets", "Icons", "cassiopia.png"),
                 out _cassioW,
                 out _cassioH);
-            Logger.Info("Loaded Cassiopeia icon texture.");
+            //Logger.Info("Loaded Cassiopeia icon texture.");
         }
         catch (Exception ex)
         {
@@ -259,7 +259,7 @@ internal static class Program
             _trayIcon = null;
         }
 
-        Logger.Info("Starboard shutting down.");
+        //Logger.Info("Starboard shutting down.");
     }
 
     private static void RunMessageAndRenderLoop(
@@ -355,7 +355,7 @@ internal static class Program
                 PInvoke.SetForegroundWindow(_targetHwnd);
             }
 
-            Thread.Sleep(16);
+            //Thread.Sleep(1);
         }
     }
 
@@ -383,7 +383,7 @@ internal static class Program
                 proc.EnableRaisingEvents = true;
                 proc.Exited += (_, _) =>
                 {
-                    Logger.Info("StarCitizen exited, closing overlay.");
+                    //Logger.Info("StarCitizen exited, closing overlay.");
                     PInvoke.PostMessage(overlay.Hwnd, PInvoke.WM_CLOSE, default, default);
                 };
             }
