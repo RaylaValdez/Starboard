@@ -154,23 +154,31 @@ internal static class FirstStartWindow
                     if (_orbiRegFont.NativePtr != null)
                         ImGui.PushFont(_orbiRegFont);
                 }
+
                 ImGui.TextWrapped("Starboard is installed correctly.");
                 ImGui.NewLine();
                 ImGui.TextWrapped("Please read the following Disclaimer.");
 
-                var scrollSize = new Vector2(
-                    windowWidth - padding,
-                    windowHeight * 0.5f
-                );
+                // ---- size the disclaimer area from remaining height ----
+                // Reserve space for bottom separator + buttons + padding
+                float reservedFooter = buttonSize.Y + padding * 3.0f;
+                float childHeight = ImGui.GetContentRegionAvail().Y - reservedFooter;
+                // Clamp so it never collapses completely on tiny windows
+                float minChild = 120f * _dpiScale;
+                if (childHeight < minChild)
+                    childHeight = minChild;
 
-                ImGui.SetCursorPosY(windowHeight * 0.35f);
                 ImGui.Spacing();
                 ImGui.Separator();
                 ImGui.Spacing();
 
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0f, 0f, 0f, 0f));
 
-                ImGui.BeginChild("##scrollText", scrollSize, ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysVerticalScrollbar);
+                // Full width, fixed height; vertical scrollbar when needed
+                ImGui.BeginChild("##scrollText",
+                    new Vector2(0, childHeight),
+                    ImGuiChildFlags.None,
+                    ImGuiWindowFlags.AlwaysVerticalScrollbar);
 
                 ImGui.Spacing();
 
@@ -190,6 +198,7 @@ internal static class FirstStartWindow
 
                 ImGui.EndChild();
                 ImGui.PopStyleColor();
+
                 unsafe
                 {
                     if (_orbiRegFont.NativePtr != null)
@@ -197,6 +206,7 @@ internal static class FirstStartWindow
                 }
                 break;
             }
+
 
             case 1:
             {
@@ -243,10 +253,11 @@ internal static class FirstStartWindow
                 ImGui.Spacing();
                 ImGui.TextWrapped("If your Mobiglass binds are different, update them here!");
 
-                ImGui.SetCursorPosY(windowHeight * 0.4f);
                 ImGui.Spacing();
                 ImGui.Separator();
                 ImGui.Spacing();
+
+                // --- keybind pickers grow naturally in the middle area ---
 
                 ImGui.Text("Mobiglass:");
                 ImGui.SameLine();
@@ -306,17 +317,31 @@ internal static class FirstStartWindow
 
                 ImGui.PopItemWidth();
 
-                ImGui.SetCursorPosY(windowHeight * 0.8f);
+                // ---- push the joypad question down toward the bottom ----
+                // We know we still need some space for the text + toggle + bottom buttons.
+                float neededForJoypadBlock = toggleSize.Y + ImGui.GetTextLineHeightWithSpacing() * 2f + padding;
+                float availForJoypadBlock = ImGui.GetContentRegionAvail().Y - (buttonSize.Y + padding * 3f);
+
+                if (availForJoypadBlock > neededForJoypadBlock)
+                {
+                    float extra = availForJoypadBlock - neededForJoypadBlock;
+                    ImGui.Dummy(new Vector2(0f, extra));   // vertical spacer
+                }
+
+                ImGui.Spacing();
                 ImGui.Separator();
                 ImGui.Spacing();
 
                 ImGui.TextWrapped("Do you open your Mobiglass with a gamepad/joystick?");
 
-                ImGui.SetCursorPos(new Vector2(toggleX, windowHeight * 0.85f));
+                // Put the toggle on the same line block, aligned to the right
+                float currentY = ImGui.GetCursorPosY();
+                ImGui.SetCursorPos(new Vector2(toggleX, currentY + ImGui.GetTextLineHeightWithSpacing()));
+
                 unsafe
                 {
                     if (_orbiRegFont.NativePtr != null)
-                        ImGui.PopFont();
+                        ImGui.PopFont(); // pop regular before pushing small
                 }
 
                 unsafe
@@ -331,7 +356,6 @@ internal static class FirstStartWindow
                     StarboardSettingsStore.Save();
                 }
 
-
                 unsafe
                 {
                     if (_orbiRegFontSmall.NativePtr != null)
@@ -340,6 +364,7 @@ internal static class FirstStartWindow
 
                 break;
             }
+
 
             case 2:
             {
@@ -390,7 +415,6 @@ internal static class FirstStartWindow
                 ImGui.Spacing();
                 ImGui.TextWrapped("To remove a binding, right click it.");
 
-                ImGui.SetCursorPosY(windowHeight * 0.52f);
                 ImGui.Spacing();
                 ImGui.Separator();
                 ImGui.Spacing();

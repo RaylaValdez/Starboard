@@ -1,0 +1,28 @@
+﻿using MoonSharp.Interpreter;
+using MoonSharp.Interpreter.Interop;
+using Overlay_Renderer.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Starboard.Lua
+{
+    internal static class LuaEngine
+    {
+        static LuaEngine()
+        {
+            UserData.RegistrationPolicy = InteropRegistrationPolicy.Default;
+        }
+
+        public static Script CreateScript()
+        {
+            var script = new Script(CoreModules.Preset_SoftSandbox);
+
+            script.Options.DebugPrint = s => Logger.Info($"[Lua] {s}");
+
+            return script;
+        }
+    }
+}

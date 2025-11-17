@@ -1,10 +1,12 @@
 ﻿using ImGuiNET;
+using Overlay_Renderer.Helpers;
 using Overlay_Renderer.Methods;
 using Starboard.DistributedApplets;
 using Starboard.GuiElements;
+using Starboard.Lua;
 using System.Drawing;
-using System.Numerics;
 using System.Linq;
+using System.Numerics;
 
 namespace Starboard.Guis
 {
@@ -24,15 +26,28 @@ namespace Starboard.Guis
 
         private static IntPtr _cassioTex = IntPtr.Zero;
 
-        private static bool _isExpanded = false;  
-        private static float _expandAnim = 0f;    
+        private static bool _isExpanded = false;
+        private static float _expandAnim = 0f;
 
         private static readonly List<IStarboardApplet> _applets = new();
-        private static int _selectedAppletIndex = -1; 
+        private static int _selectedAppletIndex = -1;
 
         private static float _secondsSinceInteraction = 0f;
 
         public static float SecondsSinceInteraction => _secondsSinceInteraction;
+
+        private static bool _gameIsForeground = true;
+
+        internal static bool GameIsForeground
+        {
+            get => _gameIsForeground;
+            set => _gameIsForeground = value;
+        }
+
+        private static bool _importInProgress = false;
+        private static float _importProgress = 0f;
+        private static int _lastImportCount = 0;
+
 
 
         public static void Initialize(
@@ -70,19 +85,56 @@ namespace Starboard.Guis
                         _applets.Add(applet);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Warn($"[StarboardMain] Failed to instantiate applet '{t.FullName}': {ex.Message}");
                 }
             }
 
-            _applets.Sort((a, b) =>
-                string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
+            try
+            {
+                var externDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Starboard",
+                    "ExternApplets");
+
+                if (Directory.Exists(externDir))
+                {
+                    var luaFiles = Directory.EnumerateFiles(externDir, "*.lua", SearchOption.TopDirectoryOnly).ToList();
+
+                    Logger.Info($"[StarboardMain] Found {luaFiles.Count} external Lua applet file(s) in '{externDir}'.");
+
+                    foreach (var luaPath in luaFiles)
+                    {
+                        try
+                        {
+                            var luaApplet = new LuaApplet(luaPath);
+                            _applets.Add(luaApplet);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warn($"[StarboardMain] Failed to load Lua applet from '{luaPath}': {ex.Message}");
+                        }
+                    }
+                }
+                else
+                {
+                    Logger.Info($"[StarboardMain] No external applet directory yet at '{externDir}'.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"[StarboardMain] Error while scanning external Lua applets: {ex.Message}");
+            }
+
+            SortApplets();
 
             foreach (var app in _applets)
                 app.Initialize();
 
             _selectedAppletIndex = -1;
             WebBrowserManager.SetActiveApplet(null);
+
         }
 
         public static void SetMobiFrame(Rectangle mobiFrame)
@@ -100,6 +152,64 @@ namespace Starboard.Guis
             WebBrowserManager.SetActiveApplet(null);
             _secondsSinceInteraction = 0f;
         }
+
+        private static void DrawAppletErrorToast(string message, float alpha)
+        {
+            if (alpha <= 0f || string.IsNullOrEmpty(message))
+                return;
+
+            Vector2 winPos = ImGui.GetWindowPos();
+            Vector2 winSize = ImGui.GetWindowSize();
+            var dl = ImGui.GetWindowDrawList();
+
+            float outerPadding = 10f * _dpiScale; 
+            float innerPadding = 8f * _dpiScale;  
+            float maxWidth = winSize.X * 0.7f;    
+
+            Vector2 textSize = ImGui.CalcTextSize(message, false, maxWidth);
+
+            float boxWidth = MathF.Min(textSize.X, maxWidth) + innerPadding * 2f;
+            float boxHeight = textSize.Y + innerPadding * 2f;
+
+            Vector2 boxMax = new(
+                winPos.X + winSize.X - outerPadding,
+                winPos.Y + winSize.Y - outerPadding);
+
+            Vector2 boxMin = new(
+                boxMax.X - boxWidth,
+                boxMax.Y - boxHeight);
+
+            var bgCol = new Vector4(0.8f, 0.1f, 0.1f, 0.9f * alpha);
+            var borderCol = new Vector4(1.0f, 0.4f, 0.4f, 1.0f * alpha);
+            var textCol = new Vector4(1.0f, 1.0f, 1.0f, 1.0f * alpha);
+            float rounding = 6f * _dpiScale;
+
+            uint bgU32 = ImGui.GetColorU32(bgCol);
+            uint borderU32 = ImGui.GetColorU32(borderCol);
+
+            dl.AddRectFilled(boxMin, boxMax, bgU32, rounding);
+            dl.AddRect(boxMin, boxMax, borderU32, rounding, ImDrawFlags.None, 2f * _dpiScale);
+
+            Vector2 textPos = boxMin + new Vector2(innerPadding, innerPadding);
+
+            ImGui.SetCursorScreenPos(textPos);
+
+            float innerWidth = boxWidth - innerPadding * 2f;
+            ImGui.PushTextWrapPos(textPos.X + innerWidth);
+            ImGui.PushStyleColor(ImGuiCol.Text, textCol);
+            ImGui.TextUnformatted(message);
+            ImGui.PopStyleColor();
+            ImGui.PopTextWrapPos();
+        }
+
+        private static void SortApplets()
+        {
+            _applets.Sort((a, b) =>
+                string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
+        }
+
+
+
 
         public static void Draw(float dt, float globalAlpha)
         {
@@ -185,6 +295,9 @@ namespace Starboard.Guis
                 interactedThisFrame = true;
             }
 
+            if (_isExpanded)
+                interactedThisFrame = true;
+
             if (clickedLeft)
             {
                 if (hoveredThisFrame)
@@ -193,13 +306,17 @@ namespace Starboard.Guis
                 }
                 else
                 {
-                    _selectedAppletIndex = -1;
-                    selectedApplet = null;
-                    isWebApplet = false;
-                    WebBrowserManager.SetActiveApplet(null);
-                    _isExpanded = false;
+                    if (_gameIsForeground)
+                    {
+                        _selectedAppletIndex = -1;
+                        selectedApplet = null;
+                        isWebApplet = false;
+                        WebBrowserManager.SetActiveApplet(null);
+                        _isExpanded = false;
+                    }
                 }
             }
+
 
             float windowWidth = ImGui.GetWindowSize().X;
 
@@ -316,7 +433,7 @@ namespace Starboard.Guis
                 dlWindow.ChannelsSetCurrent(1);
             }
 
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, isWebApplet ? new Vector4(0, 0, 0, 0) : baseChildBg);
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, baseChildBg);
             ImGui.PushStyleVar(ImGuiStyleVar.ChildRounding, 6f * _dpiScale);
             ImGui.PushStyleVar(ImGuiStyleVar.ChildBorderSize, 2f * _dpiScale);
 
@@ -325,6 +442,45 @@ namespace Starboard.Guis
                 new Vector2(leftWidth, leftHeight),
                 ImGuiChildFlags.Borders,
                 ImGuiWindowFlags.None);
+
+            Vector2 leftPanelPos = ImGui.GetWindowPos();
+            Vector2 leftPanelSize = ImGui.GetWindowSize();
+
+            var leftRect = new RectangleF(
+                leftPanelPos.X,
+                leftPanelPos.Y,
+                leftPanelSize.X,
+                leftPanelSize.Y);
+
+            var newLuaPaths = FileDropManager.ProcessExternalAppletDrops(leftRect);
+            int newlyAddedApplets = 0;
+
+            if (newLuaPaths != null && newLuaPaths.Count > 0)
+            {
+                foreach (var luaPath in newLuaPaths)
+                {
+                    try
+                    {
+                        var newLuaApplet = new LuaApplet(luaPath);
+                        _applets.Add(newLuaApplet);
+                        newLuaApplet.Initialize();
+                        newlyAddedApplets++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn($"[StarboardMain] Failed to load dropped LuaApplet from '{luaPath}': {ex.Message}");
+                    }
+                }
+
+                if (newlyAddedApplets > 0)
+                {
+                    SortApplets();
+
+                    _importInProgress = true;
+                    _importProgress = 0;
+                    _lastImportCount = newlyAddedApplets;
+                }
+            }
 
             var dlLeft = ImGui.GetWindowDrawList();
             float rowHeight = 40f * _dpiScale;
@@ -360,6 +516,62 @@ namespace Starboard.Guis
                 bool hoveredRow = ImGui.IsItemHovered();
                 Vector2 rowMin = ImGui.GetItemRectMin();
                 Vector2 rowMax = ImGui.GetItemRectMax();
+
+                if (ImGui.BeginDragDropSource(ImGuiDragDropFlags.None))
+                {
+                    unsafe
+                    {
+                        int indexForPayload = i;
+                        ImGui.SetDragDropPayload(
+                            "SB_APPLET_INDEX",
+                            new IntPtr(&indexForPayload),
+                            sizeof(int));
+                    }
+
+                    string dragLabel = applet.DisplayName ?? "<unnamed>";
+
+                    unsafe
+                    {
+                        if (_orbiRegFont.NativePtr != null)
+                            ImGui.PushFont(_orbiRegFont);
+                    }
+                    ImGui.Text(dragLabel);
+                    unsafe
+                    {
+                        if (_orbiRegFont.NativePtr != null)
+                            ImGui.PopFont();
+                    }
+
+                    ImGui.EndDragDropSource();
+                }
+
+                if (ImGui.BeginDragDropTarget())
+                {
+                    var payload = ImGui.AcceptDragDropPayload("SB_APPLET_INDEX");
+                    unsafe
+                    {
+                        if (payload.NativePtr != null)
+                        {
+                            unsafe
+                            {
+                                int srcIndex = *(int*)payload.Data.ToPointer();
+                                if (srcIndex >= 0 && srcIndex < _applets.Count && srcIndex != i)
+                                {
+                                    var moved = _applets[srcIndex];
+                                    _applets.RemoveAt(srcIndex);
+
+                                    if (srcIndex < i)
+                                        i--;
+
+                                    _applets.Insert(i, moved);
+                                    _selectedAppletIndex = i;
+                                }
+                            }
+                        }
+                    }
+
+                    ImGui.EndDragDropTarget();
+                }
 
                 Vector4 bgColRow = rowSelected
                     ? new Vector4(1f, 1f, 1f, 0.08f)
@@ -421,6 +633,248 @@ namespace Starboard.Guis
                 ImGui.PopID();
             }
 
+            float remainingY = ImGui.GetContentRegionAvail().Y;
+            float epsilon = 5f * _dpiScale;
+            if (remainingY > rowHeight + epsilon)
+            {
+                ImGui.Dummy(new Vector2(0f, remainingY - rowHeight - epsilon));
+            }
+
+            ImGui.PushID("AddAppletRow");
+
+            bool addClicked = false;
+            Vector2 addRowMin, addRowMax;
+
+            if (_importInProgress)
+            {
+                ImGui.Selectable("##importRow", false,
+                    ImGuiSelectableFlags.None,
+                    new Vector2(0, rowHeight));
+
+                addRowMin = ImGui.GetItemRectMin();
+                addRowMax = ImGui.GetItemRectMax();
+
+                _importProgress += dt * 2.0f;
+                if (_importProgress >= 1f)
+                {
+                    _importProgress = 1f;
+                    _importInProgress = false;
+                }
+
+                float fullWidth = addRowMax.X - addRowMin.X;
+                float fillWidth = fullWidth * _importProgress;
+
+                uint bgCol = ImGui.GetColorU32(new Vector4(0.2f, 0.7f, 0.3f, 0.25f));
+                uint fillCol = ImGui.GetColorU32(new Vector4(0.2f, 0.9f, 0.4f, 0.9f));
+
+                dlLeft.AddRectFilled(addRowMin, addRowMax, bgCol, 6f * _dpiScale);
+                dlLeft.AddRectFilled(
+                    addRowMin,
+                    new Vector2(addRowMin.X + fillWidth, addRowMax.Y),
+                    fillCol,
+                    6f * _dpiScale);
+
+                string label = $"Imported {_lastImportCount} applet(s)...";
+                Vector2 textSize = ImGui.CalcTextSize(label);
+                Vector2 textPos = new(
+                    addRowMin.X + (fullWidth - textSize.X) * 0.5f,
+                    addRowMin.Y + (rowHeight - textSize.Y) * 0.5f);
+
+                dlLeft.AddText(textPos, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1f)), label);
+            }
+            else
+            {
+                addClicked = ImGui.Selectable("##addAppletRow", false,
+                    ImGuiSelectableFlags.None,
+                    new Vector2(0, rowHeight));
+
+                addRowMin = ImGui.GetItemRectMin();
+                addRowMax = ImGui.GetItemRectMax();
+
+                bool addHovered = ImGui.IsItemHovered();
+                bool deleteHighlight = false;
+
+                if (ImGui.BeginDragDropTarget())
+                {
+                    var payload = ImGui.AcceptDragDropPayload(
+                        "SB_APPLET_INDEX",
+                        ImGuiDragDropFlags.AcceptBeforeDelivery);
+
+                    unsafe
+                    {
+                        if (payload.NativePtr != null)
+                        {
+                            unsafe
+                            {
+                                int srcIndex = *(int*)payload.Data.ToPointer();
+
+                                if (srcIndex >= 0 && srcIndex < _applets.Count &&
+                                    _applets[srcIndex] is LuaApplet luaApplet)
+                                {
+                                    deleteHighlight = true;
+
+                                    if (payload.IsDelivery())
+                                    {
+                                        var scriptPath = luaApplet.ScriptPath;
+                                        if (!string.IsNullOrEmpty(scriptPath))
+                                        {
+                                            _selectedAppletIndex = -1;
+                                            selectedApplet = null;
+                                            isWebApplet = false;
+                                            WebBrowserManager.SetActiveApplet(null);
+                                            try
+                                            {
+                                                if (File.Exists(scriptPath))
+                                                {
+                                                    Logger.Info($"[StarboardMain] Deleting Lua applet file: '{scriptPath}'.");
+                                                    File.Delete(scriptPath);
+                                                }
+                                                else
+                                                {
+                                                    Logger.Info($"[StarboardMain] Lua applet file '{scriptPath}' not found on disk (already removed?).");
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Logger.Warn($"[StarboardMain] Failed to delete lua applet file '{scriptPath}': {ex.Message}");
+                                            }
+                                        }
+
+                                        var removed = _applets[srcIndex];
+                                        _applets.RemoveAt(srcIndex);
+                                        Logger.Info($"[StarboardMain] Removed Lua applet '{removed.DisplayName}' via delete zone.");
+
+                                        if (_selectedAppletIndex == srcIndex)
+                                            _selectedAppletIndex = -1;
+                                        else if (_selectedAppletIndex > srcIndex)
+                                            _selectedAppletIndex--;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ImGui.EndDragDropTarget();
+
+
+                }
+
+                Vector4 bgVec;
+                Vector4 iconVec;
+                bool drawMinus = deleteHighlight; 
+
+                if (deleteHighlight)
+                {
+                    bgVec = new Vector4(0.9f, 0.1f, 0.1f, 0.55f);
+                    iconVec = new Vector4(1f, 0.9f, 0.9f, 1f);
+                }
+                else
+                {
+                    bgVec = addHovered
+                        ? new Vector4(0.2f, 0.5f, 1f, 0.25f)   
+                        : new Vector4(1f, 1f, 1f, 0.03f);      
+
+                    iconVec = addHovered
+                        ? new Vector4(0.8f, 0.9f, 1f, 1f)
+                        : new Vector4(1f, 1f, 1f, 0.8f);
+                }
+
+                uint bgCol = ImGui.GetColorU32(bgVec);
+                dlLeft.AddRectFilled(addRowMin, addRowMax, bgCol, 6f * _dpiScale);
+
+                Vector2 center = (addRowMin + addRowMax) * 0.5f;
+                float halfSize = rowHeight * 0.25f;
+                uint iconCol = ImGui.GetColorU32(iconVec);
+
+                dlLeft.AddLine(
+                    new Vector2(center.X - halfSize, center.Y),
+                    new Vector2(center.X + halfSize, center.Y),
+                    iconCol,
+                    2f * _dpiScale);
+
+                if (!drawMinus)
+                {
+                    dlLeft.AddLine(
+                        new Vector2(center.X, center.Y - halfSize),
+                        new Vector2(center.X, center.Y + halfSize),
+                        iconCol,
+                        2f * _dpiScale);
+                }
+            }
+
+
+            ImGui.PopID();
+
+            if (addClicked && !_importInProgress)
+            {
+                try
+                {
+                    using (var ofd = new OpenFileDialog())
+                    {
+                        ofd.Filter = "Lua applets (*.lua)|*.lua|All files (*.*)|*.*";
+                        ofd.Multiselect = true;
+                        ofd.Title = "Select Lua applet(s) to import";
+
+                        if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                        {
+                            var externDir = Path.Combine(
+                                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                "Starboard",
+                                "ExternApplets");
+
+                            Directory.CreateDirectory(externDir);
+
+                            var importedPaths = new List<string>();
+                            foreach (var src in ofd.FileNames)
+                            {
+                                if (!string.Equals(Path.GetExtension(src), ".lua", StringComparison.OrdinalIgnoreCase))
+                                    continue;
+
+                                var destPath = Path.Combine(externDir, Path.GetFileName(src));
+                                try
+                                {
+                                    File.Copy(src, destPath, overwrite: true);
+                                    importedPaths.Add(destPath);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logger.Warn($"[StarboardMain] Failed to import Lua applet '{src}' -> '{destPath}': {ex.Message}");
+                                }
+                            }
+
+                            int added = 0;
+                            foreach (var p in importedPaths)
+                            {
+                                try
+                                {
+                                    var newLuaApplet = new LuaApplet(p);
+                                    _applets.Add(newLuaApplet);
+                                    newLuaApplet.Initialize();
+                                    added++;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logger.Warn($"[StarboardMain] Failed to load imported Lua applet from '{p}': {ex.Message}");
+                                }
+                            }
+
+                            if (added > 0)
+                            {
+                                SortApplets();
+                                _importInProgress = true;
+                                _importProgress = 0f;
+                                _lastImportCount = added;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"[StarboardMain] Error during Lua applet import: {ex.Message}");
+                }
+            }
+
+
             ImGui.PopStyleColor(3);
             ImGui.EndChild();
 
@@ -464,9 +918,7 @@ namespace Starboard.Guis
             ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(16f * _dpiScale, 6f * _dpiScale));
 
             bool hasActiveApplet = selectedApplet != null;
-            bool canGoBack = hasActiveApplet &&
-                             selectedApplet!.UsesWebView &&
-                             WebBrowserManager.ActiveCanGoBack();
+            bool canGoBack = hasActiveApplet && selectedApplet!.UsesWebView && WebBrowserManager.ActiveCanGoBack();
 
             ImGui.BeginDisabled(!canGoBack);
             if (ImGui.Button("Back"))
@@ -495,7 +947,6 @@ namespace Starboard.Guis
                 FirstStartWindow.OpenToPage(1);
             }
 
-            // pop style + font
             ImGui.PopStyleVar(2);
             ImGui.PopFont();
 
@@ -528,13 +979,13 @@ namespace Starboard.Guis
             else
             {
                 var dlRight = ImGui.GetWindowDrawList();
-                Vector2 winPos = ImGui.GetWindowPos();   
+                Vector2 winPos = ImGui.GetWindowPos();
                 Vector2 childSize = ImGui.GetWindowSize();
                 Vector2 center = winPos + childSize * 0.5f;
 
                 // how far in from each corner
                 float cornerPadding = 60f * _dpiScale;
-                float innerFactor = 0.65f;             
+                float innerFactor = 0.65f;
                 float thickness = 3f * _dpiScale;
                 uint lineCol = ImGui.GetColorU32(ImGuiCol.Border);
 
@@ -561,11 +1012,19 @@ namespace Starboard.Guis
                 ImGui.TextDisabled(placeholder);
             }
 
+            if (selectedApplet is LuaApplet luaSelected &&
+                luaSelected.TryGetErrorForDisplay(out var errMsg, out var errAlpha) &&
+                errAlpha > 0f)
+            {
+                DrawAppletErrorToast(errMsg, errAlpha);
+            }
+
             unsafe
             {
                 if (_orbiRegFont.NativePtr != null)
                     ImGui.PopFont();
             }
+
 
             ImGui.EndChild();
 
@@ -577,7 +1036,7 @@ namespace Starboard.Guis
             if (webForBg)
             {
                 dlWindow.ChannelsMerge();
-                ImGui.PopStyleColor(); 
+                ImGui.PopStyleColor();
             }
 
             HitTestRegions.AddCurrentWindow();

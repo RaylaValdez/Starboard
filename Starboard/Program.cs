@@ -81,7 +81,7 @@ internal static class Program
         using var d3dHost = new D3DHost(overlay.Hwnd);
         using var imguiRenderer = new ImGuiRendererD3D11(d3dHost.Device, d3dHost.Context);
 
-        ImGuiStylePresets.ApplyDark();
+        StarboardStyle.ApplyStarboardStyle();
 
         try
         {
@@ -307,6 +307,8 @@ internal static class Program
             WebBrowserManager.BeginFrame();
 
             HWND fg = PInvoke.GetForegroundWindow();
+
+            StarboardMain.GameIsForeground = (fg == _targetHwnd);
 
             HitTestRegions.BeginFrame();
 

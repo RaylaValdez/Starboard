@@ -29,7 +29,7 @@ namespace Starboard
     internal sealed class StarboardSettingsStore
     {
         private static readonly string _baseDir =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Starboard");
 
         private static readonly string _settingsPath =
