@@ -5,10 +5,15 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 ## ✨ Features
 
+
+![Demo](https://raw.githubusercontent.com/RaylaValdez/Starboard/main/Starboard/Assets/StarboardDemonstration.gif)
+
 - First Start Setup to discover your Mobiglass bindings. 
 - User made applets easy thanks to ImGui!
 - No more tabbing in and out of the game, you can access all the information you'd need right in game, Starboard opens when you open your Mobiglass!
-- Preloaded with handy community made websites. 
+- Preloaded with handy community made websites.
+- Lua API for writing applets!
+- DragNDrop importing of luaapplets!
 
 ---
 
