@@ -189,13 +189,20 @@ namespace Starboard.Guis
                 {
                     float t = _preloadTime / PreloadDuration;
                     float eased = t * t * (3f - 2f * t);
-                    string overlay = $"{MathF.Round(eased * 100f)}%";
+
+                    int pct = (int)MathF.Round(eased * 100f);
+                    string overlay = pct + "%";
+
+                    if (pct == 69)
+                        overlay = "Nice.";
+
                     ImGui.ProgressBar(eased, new Vector2(-1, 0), overlay);
                 }
                 else if (_phase == Phase.FadeOut)
                 {
                     ImGui.ProgressBar(1f, new Vector2(-1, 0), "100%");
                 }
+
 
                 unsafe
                 {
