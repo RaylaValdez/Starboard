@@ -16,7 +16,7 @@ namespace Starboard.DistributedApplets
 
         private Vector2 _lastAvailableSize;
 
-        private readonly ImGuiColorTextEdit.TextEditor _editor = new();
+        private readonly TextEditor _editor = new();
 
         private static ImFontPtr _orbiRegFont;
 
