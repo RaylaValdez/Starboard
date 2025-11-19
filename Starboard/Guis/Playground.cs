@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using OpenCvSharp;
 using Overlay_Renderer.Methods;
 using System.Drawing;
 using System.Numerics;
@@ -27,12 +28,14 @@ namespace Starboard.Guis
         private static bool _preloadActive = true;    
         private static float _preloadTime = 0f;
 
-        private const float FadeInDuration = 0.25f;  
-        private const float PreloadDuration = 5.0f;  
+        private const float FadeInDuration = 0.25f;
         private const float FadeOutDuration = 0.4f;  
 
         private static float _fadeInTime = 0f;
         private static float _fadeOutTime = 0f;
+
+        private static float _preloadDuration;
+        private static readonly Random _rng = new Random();
 
         // --- StarboardMain fade knobs (hardcoded, tweak here) ---
         private const float MainFadeInSeconds = 0.1f;
@@ -71,6 +74,8 @@ namespace Starboard.Guis
             _mainFadeT = 0f;
             _mobiOpen = false;
             _mobiOpenLastFrame = false;
+
+            _preloadDuration = RandRange(0.5f, 3f);
         }
 
         public static void SetMobiFrame(Rectangle mobiFrame)
@@ -86,7 +91,7 @@ namespace Starboard.Guis
             {
                 StarboardMain.ResetOnMobiClosed();
             }
-
+          
             float globalAlpha = 1f;
             bool overlayFromLoading = 
                 (_phase == Phase.FadeIn && ShowMainDuringFadeIn) ||
@@ -113,8 +118,8 @@ namespace Starboard.Guis
 
                     if (_preloadActive)
                     {
-                        _preloadTime = MathF.Min(_preloadTime + dt, PreloadDuration);
-                        if (_preloadTime >= PreloadDuration)
+                        _preloadTime = MathF.Min(_preloadTime + dt, _preloadDuration);
+                        if (_preloadTime >= _preloadDuration)
                         {
                             _preloadActive = false;
                             _isLoaded = true;
@@ -145,7 +150,13 @@ namespace Starboard.Guis
             if (_phase != Phase.Done)
             {
                 ImGui.SetNextWindowSize(new Vector2(500f, 150f), ImGuiCond.Always);
-                ImGui.SetNextWindowPos(new Vector2(50f, 50f), ImGuiCond.Always);
+
+                if (_mobiFramePx.Width > 0 && _mobiFramePx.Height > 0)
+                {
+                    var mobiTopLeft = new Vector2(_mobiFramePx.Left, _mobiFramePx.Top);
+                    var offset = new Vector2(50f, 50f);
+                    ImGui.SetNextWindowPos(mobiTopLeft + offset, ImGuiCond.Always);
+                }
 
                 ImGui.PushStyleVar(ImGuiStyleVar.Alpha, globalAlpha);
 
@@ -187,7 +198,7 @@ namespace Starboard.Guis
 
                 if (_phase == Phase.Preload)
                 {
-                    float t = _preloadTime / PreloadDuration;
+                    float t = _preloadTime / _preloadDuration;
                     float eased = t * t * (3f - 2f * t);
 
                     int pct = (int)MathF.Round(eased * 100f);
@@ -260,6 +271,11 @@ namespace Starboard.Guis
 
             _mobiOpen = drawMain;
             _mobiOpenLastFrame = _mobiOpen;
+        }
+
+        private static float RandRange(float min, float max)
+        {
+            return (float)(_rng.NextDouble() * (max - min) + min);
         }
     }
 }

@@ -25,7 +25,7 @@ Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. 
     <PackageTags>gaming; overlay; </PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <Version>0.0.17.15</Version>
+    <Version>0.0.18.0</Version>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
   </PropertyGroup>
@@ -71,6 +71,15 @@ Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. 
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Assets\Fonts\JetBrainsMono\AUTHORS.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Fonts\JetBrainsMono\fonts\ttf\JetBrainsMono-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Fonts\JetBrainsMono\OFL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\Fonts\Orbitron\OFL.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -103,6 +112,10 @@ Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. 
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\Fonts\JetBrainsMono\" />
   </ItemGroup>
 
 

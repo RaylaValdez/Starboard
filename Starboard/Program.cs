@@ -39,6 +39,7 @@ internal static class Program
     private static ImFontPtr _orbiBoldFont;
     private static ImFontPtr _orbiRegFont;
     private static ImFontPtr _orbiRegFontSmall;
+    public static ImFontPtr _jBMReg;
 
     private static VIRTUAL_KEY _openMobiglassVk;
     private static ImGuiKey _openMobiglassImGui;
@@ -189,6 +190,8 @@ internal static class Program
         _orbiBoldFont = imguiRenderer.AddFontFromFileTTF("Assets/Fonts/Orbitron/static/Orbitron-Bold.ttf", 32f * _dpiScale);
 
         _orbiRegFontSmall = imguiRenderer.AddFontFromFileTTF("Assets/Fonts/Orbitron/static/Orbitron-Regular.ttf", 16f * _dpiScale);
+
+        _jBMReg = imguiRenderer.AddFontFromFileTTF("Assets/Fonts/JetBrainsMono/fonts/ttf/JetBrainsMono-Regular.ttf", 16f * _dpiScale);
 
         FaviconManager.IconSizePx = (int)MathF.Round(32f * _dpiScale);
 

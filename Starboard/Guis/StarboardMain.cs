@@ -129,6 +129,8 @@ namespace Starboard.Guis
 
             SortApplets();
 
+            AppletOrderStore.ApplySavedOrder(_applets);
+
             foreach (var app in _applets)
                 app.Initialize();
 
@@ -213,6 +215,7 @@ namespace Starboard.Guis
 
         public static void Draw(float dt, float globalAlpha)
         {
+            var io = ImGui.GetIO();
             globalAlpha = Math.Clamp(globalAlpha, 0f, 1f);
             ImGui.PushStyleVar(ImGuiStyleVar.Alpha, globalAlpha);
 
@@ -281,8 +284,10 @@ namespace Starboard.Guis
             }
 
             // Hover / click handling
-            bool hoveredThisFrame = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.NoPopupHierarchy);
+            bool hoveredThisFrame = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.AllowWhenBlockedByPopup);
             bool clickedLeft = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+            bool uiCapturingMouse = io.WantCaptureMouse;
+
 
             if (hoveredThisFrame)
                 interactedThisFrame = true;
@@ -306,7 +311,7 @@ namespace Starboard.Guis
                 }
                 else
                 {
-                    if (_gameIsForeground)
+                    if (_gameIsForeground && !uiCapturingMouse)
                     {
                         _selectedAppletIndex = -1;
                         selectedApplet = null;
@@ -565,6 +570,8 @@ namespace Starboard.Guis
 
                                     _applets.Insert(i, moved);
                                     _selectedAppletIndex = i;
+
+                                    AppletOrderStore.SaveOrder(_applets);
                                 }
                             }
                         }
@@ -748,6 +755,8 @@ namespace Starboard.Guis
                                             _selectedAppletIndex = -1;
                                         else if (_selectedAppletIndex > srcIndex)
                                             _selectedAppletIndex--;
+
+                                        AppletOrderStore.SaveOrder(_applets);
                                     }
                                 }
                             }
@@ -864,6 +873,8 @@ namespace Starboard.Guis
                                 _importInProgress = true;
                                 _importProgress = 0f;
                                 _lastImportCount = added;
+
+                                AppletOrderStore.SaveOrder(_applets);
                             }
                         }
                     }
@@ -973,8 +984,18 @@ namespace Starboard.Guis
 
             if (selectedApplet != null)
             {
-                Vector2 innerSize = ImGui.GetContentRegionAvail();
-                selectedApplet.Draw(dt, innerSize);
+                Vector2 avail = ImGui.GetContentRegionAvail();
+
+                ImGui.BeginChild(
+                    "##StarboardAppletSandbox",
+                    avail,
+                    ImGuiChildFlags.None,
+                    ImGuiWindowFlags.None);
+
+                Vector2 sandboxSize = ImGui.GetContentRegionAvail();
+                selectedApplet.Draw(dt, sandboxSize);
+
+                ImGui.EndChild();
             }
             else
             {

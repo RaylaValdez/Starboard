@@ -64,7 +64,7 @@ namespace Starboard.Lua
 
 
                 UserData.RegisterType<LuaUiApi>();
-                _script.Globals["ui"] = UserData.CreateStatic<LuaUiApi>();
+                _script.Globals["ui"] = UserData.Create(new LuaUiApi());
 
                 _script.DoFile(_scriptPath);
 
@@ -187,7 +187,7 @@ namespace Starboard.Lua
                 var newScript = LuaEngine.CreateScript();
 
                 UserData.RegisterType<LuaUiApi>();
-                newScript.Globals["ui"] = UserData.CreateStatic<LuaUiApi>();
+                newScript.Globals["ui"] = UserData.Create(new LuaUiApi());
 
                 newScript.DoFile(_scriptPath);
 
@@ -387,7 +387,5 @@ namespace Starboard.Lua
                 Logger.Warn($"[LuaApplet:{_id}] CaptureAndSaveState failed: {ex.Message}");
             }
         }
-
-
     }
 }

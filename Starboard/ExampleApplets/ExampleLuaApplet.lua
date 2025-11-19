@@ -33,10 +33,10 @@ end
 --   dt = seconds since last frame
 --   w, h = the size of your applet's panel (if needed)
 --
--- Use ImGui via the `ui` table (ui.text, ui.button, ui.slider_float, etc.)
-function app.draw(dt, w, h)
+-- Use ImGui via the `ui` table (ui.text, ui.button, ui.slider_float, etc.) 
+function app.draw(dt, w, h) 
     ui.text("Hello, " .. (state.name or "???"))
-    ui.text("Counter: " .. tostring(state.counter or 0))
+    ui.text("Counter: " .. tostring(state.counter or 0))  ((()))
 
     -- ui.button returns true on click
     if ui.button("Increment") then
