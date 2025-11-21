@@ -2,33 +2,35 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+
     <PlatformTarget>x64</PlatformTarget>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseWindowsForms>true</UseWindowsForms>
+
     <ApplicationIcon>Assets\Icons\cassiopia.ico</ApplicationIcon>
-    <UseWindowsForms>True</UseWindowsForms>
-    <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
+
     <Authors>RaylaValdez</Authors>
     <Company>Triquetra</Company>
-    <Description> Starboard is a transparent, topmost, click-through overlay that renders a single ImGui frame on top of Star Citizen. 
+    <Description>Starboard is a transparent, topmost, click-through overlay that renders a single ImGui frame on top of Star Citizen. It lets devs build external applets that render inside a predefined ImGui child. Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly.</Description>
 
-It's designed so devs can build external tools (applets) that render inside a predefined ImGui child. 
-
-Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. </Description>
+    <!-- Package/Repo metadata -->
     <PackageProjectUrl>https://github.com/RaylaValdez/Starboard</PackageProjectUrl>
-    <PackageIcon>cassiopia.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/RaylaValdez/Starboard</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>gaming; overlay; </PackageTags>
+    <PackageIcon>cassiopia.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>gaming; overlay;</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <Version>0.0.18.0</Version>
-    <AssemblyVersion></AssemblyVersion>
-    <FileVersion></FileVersion>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -50,74 +52,32 @@ Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. 
     <PackageReference Include="Vortice.DXGI" Version="3.6.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="Assets\Icons\cassiopia.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
+  <!-- Keep packaging of README and LICENSE -->
   <ItemGroup>
     <None Include="..\LICENSE">
-      <Pack>True</Pack>
+      <Pack>true</Pack>
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\README.md">
-      <Pack>True</Pack>
+      <Pack>true</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <None Include="Assets\Icons\cassiopia.png">
+      <Pack>true</Pack>
+      <PackagePath>\</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Copy all assets by default -->
+  <ItemGroup>
+    <Content Include="Assets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Overlay-Renderer\Overlay-Renderer\Overlay-Renderer.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Assets\Fonts\JetBrainsMono\AUTHORS.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\JetBrainsMono\fonts\ttf\JetBrainsMono-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\JetBrainsMono\OFL.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\OFL.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\Orbitron-VariableFont_wght.ttf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\static\Orbitron-Black.ttf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\static\Orbitron-Bold.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\static\Orbitron-ExtraBold.ttf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\static\Orbitron-Medium.ttf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\static\Orbitron-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Fonts\Orbitron\static\Orbitron-SemiBold.ttf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Icons\cassiopia.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\Icons\cassiopia.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Assets\Fonts\JetBrainsMono\" />
-  </ItemGroup>
-
 
 </Project>
