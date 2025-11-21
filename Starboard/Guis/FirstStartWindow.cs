@@ -27,6 +27,8 @@ internal static class FirstStartWindow
     private static bool _usesJoypad;
     private static bool _firstRunComplete;
 
+    private static bool _devMode;
+
     private static float _idleCloseSeconds = 15f;
 
     private static List<ControllerBinding> _openMobiglassControllerBinds = new();
@@ -66,6 +68,8 @@ internal static class FirstStartWindow
 
         _usesJoypad = StarboardSettingsStore.Current.UsesJoyPad;
         _firstRunComplete = StarboardSettingsStore.Current.FirstRunCompleted;
+
+        _devMode = StarboardSettingsStore.Current.DevMode;
 
         _idleCloseSeconds = StarboardSettingsStore.Current.IdleCloseSeconds > 0 ? StarboardSettingsStore.Current.IdleCloseSeconds : 15f;
 
@@ -319,7 +323,7 @@ internal static class FirstStartWindow
 
                 // ---- push the joypad question down toward the bottom ----
                 // We know we still need some space for the text + toggle + bottom buttons.
-                float neededForJoypadBlock = toggleSize.Y + ImGui.GetTextLineHeightWithSpacing() * 2f + padding;
+                float neededForJoypadBlock = toggleSize.Y + ImGui.GetTextLineHeightWithSpacing() * 2.2f + padding;
                 float availForJoypadBlock = ImGui.GetContentRegionAvail().Y - (buttonSize.Y + padding * 3f);
 
                 if (availForJoypadBlock > neededForJoypadBlock)
@@ -334,15 +338,14 @@ internal static class FirstStartWindow
 
                 ImGui.TextWrapped("Do you open your Mobiglass with a gamepad/joystick?");
 
-                // Put the toggle on the same line block, aligned to the right
-                float currentY = ImGui.GetCursorPosY();
-                ImGui.SetCursorPos(new Vector2(toggleX, currentY + ImGui.GetTextLineHeightWithSpacing()));
-
                 unsafe
                 {
                     if (_orbiRegFont.NativePtr != null)
                         ImGui.PopFont(); // pop regular before pushing small
                 }
+
+                float currentY = ImGui.GetCursorPosY();
+                ImGui.SetCursorPos(new Vector2(toggleX, currentY)); //+ ImGui.GetTextLineHeightWithSpacing()));
 
                 unsafe
                 {
@@ -356,12 +359,61 @@ internal static class FirstStartWindow
                     StarboardSettingsStore.Save();
                 }
 
+
                 unsafe
                 {
                     if (_orbiRegFontSmall.NativePtr != null)
                         ImGui.PopFont();
                 }
 
+                unsafe
+                {
+                    if (_orbiRegFont.NativePtr != null)
+                        ImGui.PushFont(_orbiRegFont);
+                }
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                ImGui.TextWrapped("Do you want to develop Applets?");
+
+                unsafe
+                {
+                    if (_orbiRegFont.NativePtr != null)
+                        ImGui.PopFont();
+                }
+
+                float secondCurrentY = ImGui.GetCursorPosY();
+                ImGui.SetCursorPos(new Vector2(toggleX, secondCurrentY)); //+ ImGui.GetTextLineHeightWithSpacing()));
+
+                unsafe
+                {
+                    if (_orbiRegFontSmall.NativePtr != null)
+                        ImGui.PushFont(_orbiRegFontSmall);
+                }
+
+                if (ToggleSwitch.Draw("DevMode", toggleSize, ref _devMode, "YES", "NO"))
+                {
+                    StarboardSettingsStore.Current.DevMode = _devMode;
+                    StarboardSettingsStore.Save();
+
+                    if (_devMode)
+                    {
+                        StarboardMain.RegisterLuaEditorApplet(selecterAfterAdd: false);
+                    }
+                    else
+                    {
+                        StarboardMain.RemoveApplet("starboard.lua_editor");
+                    }
+                }
+
+
+                unsafe
+                {
+                    if (_orbiRegFontSmall.NativePtr != null)
+                        ImGui.PopFont();
+                }
                 break;
             }
 

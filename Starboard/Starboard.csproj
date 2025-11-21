@@ -28,6 +28,7 @@ Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly. 
     <Version>0.0.18.0</Version>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

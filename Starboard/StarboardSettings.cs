@@ -20,6 +20,7 @@ namespace Starboard
         public VIRTUAL_KEY OpenMobiCommsKeybindVk { get; set; } = VIRTUAL_KEY.VK_F11;
         public ImGuiKey OpenMobiCommsKeybind { get; set; } = ImGuiKey.F11;
         public bool UsesJoyPad { get; set; } = false;
+        public bool DevMode { get; set; } = false;
         public List<ControllerBinding> OpenMobiglassControllerBinds { get; set; } = new() { new ControllerBinding() };
         public List<ControllerBinding> OpenMobimapControllerBinds { get; set; } = new() { new ControllerBinding() };
         public List<ControllerBinding> OpenMobicommsControllerBinds { get; set; } = new() { new ControllerBinding() };

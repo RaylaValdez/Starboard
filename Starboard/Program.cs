@@ -49,6 +49,7 @@ internal static class Program
     private static ImGuiKey _openMobiCommsImGui;
     private static bool _usesJoypad;
     private static bool _firstRunComplete;
+    private static bool _devMode;
 
     private static HWND _targetHwnd;
 
@@ -195,16 +196,18 @@ internal static class Program
 
         FaviconManager.IconSizePx = (int)MathF.Round(32f * _dpiScale);
 
+        // Load Settings
+        StarboardSettingsStore.Load();
+
+        _devMode = StarboardSettingsStore.Current.DevMode;
 
         // Init playground
         Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         FirstStartWindow.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
-        StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
+        StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall, _devMode);
         TextureService.Initialize(imguiRenderer);
         WebBrowserManager.Initialize(overlay.Hwnd, _mobiFramePx.Width, _mobiFramePx.Height);
 
-        // Load Settings
-        StarboardSettingsStore.Load();
 
         _openMobiglassVk = StarboardSettingsStore.Current.OpenMobiglassKeybindVk;
         _openMobiglassImGui = StarboardSettingsStore.Current.OpenMobiglassKeybind;

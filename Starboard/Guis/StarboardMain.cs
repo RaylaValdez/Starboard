@@ -28,6 +28,7 @@ namespace Starboard.Guis
 
         private static bool _isExpanded = false;
         private static float _expandAnim = 0f;
+        private static bool _devMode;
 
         private static readonly List<IStarboardApplet> _applets = new();
         private static int _selectedAppletIndex = -1;
@@ -56,7 +57,8 @@ namespace Starboard.Guis
             Rectangle mobiFrame,
             ImFontPtr fontBold,
             ImFontPtr font,
-            ImFontPtr smallFont)
+            ImFontPtr smallFont,
+            bool devMode)
         {
             _dpiScale = dpiScale;
             _mobiFramePx = mobiFrame;
@@ -64,6 +66,8 @@ namespace Starboard.Guis
             _orbiRegFont = font;
             _orbiRegFontSmall = smallFont;
             _cassioTex = cassioTex;
+
+            _devMode = devMode;
 
             _applets.Clear();
 
@@ -78,6 +82,8 @@ namespace Starboard.Guis
 
             foreach (var t in appletTypes)
             {
+                if (!_devMode && t == typeof(LuaEditorApplet))
+                    continue;
                 try
                 {
                     if (Activator.CreateInstance(t) is IStarboardApplet applet)
@@ -155,6 +161,55 @@ namespace Starboard.Guis
             _secondsSinceInteraction = 0f;
         }
 
+        /// <summary>
+        /// Create (or replace) a LuaApplet from the given scriptPath,
+        /// add it to the applet list, re-sort, save order, and optionally select it.
+        /// Call this after saving a .lua file from the editor.
+        /// </summary>
+        public static void RegisterOrUpdateLuaApplet(string scriptPath, bool selectAfterAdd = true)
+        {
+            if (string.IsNullOrWhiteSpace(scriptPath))
+                return;
+
+            scriptPath = Path.GetFullPath(scriptPath);
+
+            // See if we already have an applet for this script
+            int existingIndex = -1;
+            for (int i = 0; i < _applets.Count; i++)
+            {
+                if (_applets[i] is LuaApplet lua &&
+                    string.Equals(Path.GetFullPath(lua.ScriptPath),
+                                  scriptPath,
+                                  StringComparison.OrdinalIgnoreCase))
+                {
+                    existingIndex = i;
+                    break;
+                }
+            }
+
+            // Build the new applet
+            var newApplet = new LuaApplet(scriptPath);
+            newApplet.Initialize();
+
+            if (existingIndex >= 0)
+            {
+                _applets[existingIndex] = newApplet;
+            }
+            else
+            {
+                _applets.Add(newApplet);
+            }
+
+            SortApplets();
+            AppletOrderStore.SaveOrder(_applets);
+
+            if (selectAfterAdd)
+            {
+                _selectedAppletIndex = _applets.IndexOf(newApplet);
+                WebBrowserManager.SetActiveApplet(newApplet.UsesWebView ? newApplet.Id : null);
+            }
+        }
+
         private static void DrawAppletErrorToast(string message, float alpha)
         {
             if (alpha <= 0f || string.IsNullOrEmpty(message))
@@ -210,8 +265,65 @@ namespace Starboard.Guis
                 string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
         }
 
+        public static void RegisterLuaEditorApplet(bool selecterAfterAdd = false)
+        {
+            var existing = _applets.FirstOrDefault(a => a.Id == "starboard.lua_editor");
+            if (existing != null)
+            {
+                if (selecterAfterAdd)
+                {
+                    _selectedAppletIndex = _applets.IndexOf(existing);
+                    WebBrowserManager.SetActiveApplet(existing.UsesWebView ? existing.Id : null);
+                }
+                return;
+            }
 
+            try
+            {
+                var editor = new LuaEditorApplet();
+                editor.Initialize();
+                _applets.Add(editor);
 
+                SortApplets();
+                AppletOrderStore.SaveOrder(_applets);
+
+                if (selecterAfterAdd)
+                {
+                    _selectedAppletIndex = _applets.IndexOf(editor);
+                    WebBrowserManager.SetActiveApplet(editor.UsesWebView ? editor.Id : null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"[StarboardMain] Failed to regiester LuaEditorApplet: {ex.Message}");
+            }
+        }
+
+        public static void RemoveApplet(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+                return;
+
+            int index = _applets.FindIndex(a => a.Id == id);
+            if (index < 0)
+                return;
+
+            var removed = _applets[index];
+            _applets.RemoveAt(index);
+
+            if (_selectedAppletIndex == index)
+            {
+                _selectedAppletIndex = -1;
+                WebBrowserManager.SetActiveApplet(null);
+            }
+            else if (_selectedAppletIndex > index)
+            {
+                _selectedAppletIndex--;
+            }
+
+            AppletOrderStore.SaveOrder(_applets);
+            Logger.Info($"[StarboardMain] Removed applet '{removed.DisplayName}' (Id={id}).");
+        }
 
         public static void Draw(float dt, float globalAlpha)
         {

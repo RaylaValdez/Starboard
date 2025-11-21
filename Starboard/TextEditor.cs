@@ -2,9 +2,11 @@
 using System.Text;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using ImGuiNET;
 using System.Reflection;
 using Starboard.Lua;
+using Starboard.DistributedApplets;
 
 namespace Starboard
 {
@@ -30,7 +32,7 @@ namespace Starboard
             // VSCode-like editor background (#1E1E1E)
             ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0.117f, 0.117f, 0.117f, 1.0f));
 
-            if (!ImGui.BeginChild(id, size, ImGuiChildFlags.Borders, ImGuiWindowFlags.NoScrollbar))
+            if (!ImGui.BeginChild(id, size, ImGuiChildFlags.Borders, ImGuiWindowFlags.HorizontalScrollbar))
             {
                 ImGui.PopStyleColor();
                 unsafe
@@ -47,6 +49,36 @@ namespace Starboard
 
             if (focused)
                 HandleKeyboard(io);
+
+            if (_searchOpen)
+            {
+                float barWidth = 360f;
+                float barHeight = 100f;
+
+                // Top-left of the editor’s content region
+                Vector2 childPos = ImGui.GetCursorScreenPos();
+                Vector2 childSize = ImGui.GetContentRegionAvail();
+
+                Vector2 posTopRight = new Vector2(
+                    childPos.X + childSize.X - barWidth - 6f,
+                    childPos.Y + 6f
+                );
+
+                // Draw a floating child *inside* the editor window
+                Vector2 oldCursor = ImGui.GetCursorScreenPos();
+                ImGui.SetCursorScreenPos(posTopRight);
+
+                ImGui.BeginChild("##SearchReplace",
+                    new Vector2(barWidth, barHeight),
+                    ImGuiChildFlags.Borders,
+                    ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings);
+
+                DrawSearchUI();
+                ImGui.EndChild();
+
+                // Restore cursor so DrawContents still uses the correct origin
+                ImGui.SetCursorScreenPos(oldCursor);
+            }
 
             DrawContents();
 
@@ -198,6 +230,9 @@ namespace Starboard
         // Indent guide colour (#404040-ish)
         private readonly Vector4 _colIndentGuide = new(0.251f, 0.251f, 0.251f, 0.6f);
 
+        private readonly Vector4 _colLineNumber = new(0.5f, 0.5f, 0.5f, 0.9f);
+
+
         private float _lineHeight;
         private float _charAdvance;
 
@@ -224,6 +259,25 @@ namespace Starboard
 
         // Last known caret screen position (bottom-left of caret)
         private Vector2 _caretScreenPos;
+
+        // Inline completion (ghost text)
+        private string _inlineSuggestion = string.Empty;
+        private int _inlineSuggestionLine = -1;
+        private int _inlineSuggestionColumn = -1;
+
+        private bool _searchOpen = false;
+        private int _searchResultLine = -1;
+        private int _searchResultCol = -1;
+
+        private string _findText = "";
+        private string _replaceText = "";
+        private bool _caseSensitive = false;
+        private bool _wholeWord = false;
+
+        private string replaceLabel = "Replace";
+
+
+
 
 
         // ---------------------------------------------------------------------
@@ -591,13 +645,13 @@ namespace Starboard
                                  pars.Select(p => $"{p.ParameterType.Name} {p.Name}")) +
                              ")";
 
-                var summary = BuildSummary(name, pars);
+                var summary = TryGetXmlSummary(m) ?? BuildSummary(name, pars);
 
                 var item = new CompletionItem
                 {
                     Name = $"ui.{name}",
-                    Signature = sig,         // keep for debugging, filtering, whatever
-                    Summary = summary,       // NEW
+                    Signature = sig,     
+                    Summary = summary,   
                     InsertText = $"ui.{name}()"
                 };
 
@@ -661,6 +715,82 @@ namespace Starboard
             _suppressUndoCapture = false;
         }
 
+        private void UpdateInlineSuggestion()
+        {
+            _inlineSuggestion = string.Empty;
+            _inlineSuggestionLine = -1;
+            _inlineSuggestionColumn = -1;
+
+            if (!_hasFocus)
+                return;
+
+            EnsureCompletionItems();
+
+            if (_cursorLine < 0 || _cursorLine >= _lines.Count)
+                return;
+
+            string line = _lines[_cursorLine];
+            int col = Math.Clamp(_cursorColumn, 0, line.Length);
+
+            // Find the start of the current word / chain (letters, digits, '_', '.')
+            int start = col;
+            while (start > 0)
+            {
+                char ch = line[start - 1];
+                if (char.IsLetterOrDigit(ch) || ch == '_' || ch == '.')
+                    start--;
+                else
+                    break;
+            }
+
+            if (start == col)
+                return; // nothing to complete
+
+            string prefix = line.Substring(start, col - start);
+            if (string.IsNullOrWhiteSpace(prefix))
+                return;
+
+            // Find a completion whose Name starts with this prefix (e.g. "ui.text")
+            CompletionItem? best = null;
+
+            foreach (var item in _completionItems)
+            {
+                if (item.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+                    item.Name.Length > prefix.Length)
+                {
+                    best = item;
+                    break; // simple: first match is fine
+                }
+            }
+
+            if (best == null)
+                return;
+
+            // Show only the remaining suffix, e.g. "xt()" when you've typed "ui.te"
+            string suffix = best.Name.Substring(prefix.Length);
+
+            _inlineSuggestion = suffix;
+            _inlineSuggestionLine = _cursorLine;
+            _inlineSuggestionColumn = _cursorColumn;
+        }
+
+        private void AcceptInlineSuggestion()
+        {
+            if (string.IsNullOrEmpty(_inlineSuggestion))
+                return;
+
+            PushUndoState();
+            _suppressUndoCapture = true;
+
+            foreach (char c in _inlineSuggestion)
+                InsertChar(c);
+
+            _suppressUndoCapture = false;
+
+            _inlineSuggestion = string.Empty;
+        }
+
+
         private void HandleCompletionPopup()
         {
             EnsureCompletionItems();
@@ -687,7 +817,6 @@ namespace Starboard
             bool openFlag = _completionOpen;
             if (!ImGui.Begin("##LuaCompletion", ref openFlag,
                 ImGuiWindowFlags.NoTitleBar |
-                ImGuiWindowFlags.AlwaysAutoResize |
                 ImGuiWindowFlags.NoMove |
                 ImGuiWindowFlags.NoSavedSettings |
                 ImGuiWindowFlags.NoNavInputs))
@@ -746,8 +875,10 @@ namespace Starboard
                 }
             }
 
-            // List
-            Vector2 listSize = new Vector2(450f, 260f);
+            float rowHeight = ImGui.GetTextLineHeightWithSpacing();
+            int visibleRows = 10; // tweak to taste
+            Vector2 listSize = new Vector2(450f, rowHeight * visibleRows);
+
             if (ImGui.BeginChild("##LuaCompletionList", listSize, ImGuiChildFlags.None))
             {
                 for (int i = 0; i < _completionFiltered.Count; i++)
@@ -755,7 +886,10 @@ namespace Starboard
                     var item = _completionFiltered[i];
                     bool selected = i == _completionSelectedIndex;
 
-                    string label = $"{item.Name}  {item.Summary}";
+                    // How wide can we draw here?
+                    float maxLabelWidth = ImGui.GetContentRegionAvail().X;
+
+                    string label = BuildCompletionLabel(item, maxLabelWidth);
 
                     if (ImGui.Selectable(label, selected))
                     {
@@ -764,6 +898,14 @@ namespace Starboard
                         ImGui.EndChild();
                         ImGui.End();
                         return;
+                    }
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetNextWindowSize(new Vector2(250, 75), ImGuiCond.Always);
+                        ImGui.BeginTooltip();
+                        ImGui.TextWrapped(item.Summary);
+                        ImGui.EndTooltip();
                     }
 
                     if (selected)
@@ -780,6 +922,82 @@ namespace Starboard
         // Editing operations
         // ---------------------------------------------------------------------
 
+        private static string GetLeadingIndent(string line)
+        {
+            int i = 0;
+            while (i < line.Length && (line[i] == ' ' || line[i] == '\t'))
+                i++;
+            return line.Substring(0, i);
+        }
+
+        private static string StripComment(string line)
+        {
+            // Remove trailing Lua comment for indentation logic
+            int idx = line.IndexOf("--", StringComparison.Ordinal);
+            if (idx >= 0)
+                line = line.Substring(0, idx);
+            return line.Trim();
+        }
+
+        private static bool LineOpensLuaBlock(string line)
+        {
+            string trimmed = StripComment(line);
+            if (trimmed.Length == 0)
+                return false;
+
+            // Very simple heuristics for Lua:
+
+            // if ... then
+            if (trimmed.StartsWith("if ", StringComparison.Ordinal) &&
+                trimmed.EndsWith(" then", StringComparison.Ordinal))
+                return true;
+
+            // for ... do
+            if (trimmed.StartsWith("for ", StringComparison.Ordinal) &&
+                trimmed.EndsWith(" do", StringComparison.Ordinal))
+                return true;
+
+            // while ... do
+            if (trimmed.StartsWith("while ", StringComparison.Ordinal) &&
+                trimmed.EndsWith(" do", StringComparison.Ordinal))
+                return true;
+
+            // repeat ... until <cond>  (the "repeat" line opens, "until" closes)
+            if (trimmed == "repeat")
+                return true;
+
+            // function / local function
+            if (trimmed.StartsWith("function ", StringComparison.Ordinal) ||
+                trimmed.StartsWith("local function ", StringComparison.Ordinal))
+                return true;
+
+            // Plain "do"
+            if (trimmed == "do")
+                return true;
+
+            return false;
+        }
+
+        private static bool LineIsLuaBlockCloser(string line)
+        {
+            string trimmed = StripComment(line);
+            if (trimmed.Length == 0)
+                return false;
+
+            // End of a block
+            if (trimmed == "end" || trimmed.StartsWith("end ", StringComparison.Ordinal))
+                return true;
+
+            // End of "repeat ... until"
+            if (trimmed.StartsWith("until ", StringComparison.Ordinal))
+                return true;
+
+            // Note: we deliberately do NOT treat "else"/"elseif" as closers here,
+            // so the next line after an else stays at the same indent level.
+            return false;
+        }
+
+
         private void InsertChar(char c)
         {
             if (!_suppressUndoCapture)
@@ -793,21 +1011,48 @@ namespace Starboard
 
             if (c == '\n')
             {
-                string line = _lines[_cursorLine];
-                _cursorColumn = Math.Clamp(_cursorColumn, 0, line.Length);
+                string prevLine = _lines[_cursorLine];
+                _cursorColumn = Math.Clamp(_cursorColumn, 0, prevLine.Length);
 
-                string left = line[.._cursorColumn];
-                string right = line[_cursorColumn..];
+                string left = prevLine[.._cursorColumn];
+                string right = prevLine[_cursorColumn..];
 
+                // Update the current line with the left side
                 _lines[_cursorLine] = left;
-                _lines.Insert(_cursorLine + 1, right);
+
+                // -------------------------------
+                // Compute indent level for new line
+                // -------------------------------
+
+                // How many indent "levels" the previous line has (based on spaces/tabs)
+                int indentLevels = CountIndentLevels(prevLine);
+
+                // If the previous line is a block closer ("end", "until"), dedent by 1 level
+                if (LineIsLuaBlockCloser(prevLine) && indentLevels > 0)
+                    indentLevels--;
+
+                // If the previous line opens a block (if/for/while/function/then/etc.), add 1 level
+                if (LineOpensLuaBlock(prevLine))
+                    indentLevels++;
+
+                if (indentLevels < 0)
+                    indentLevels = 0;
+
+                int indentSpaces = indentLevels * TabSize;
+                string indent = new string(' ', indentSpaces);
+
+                string newLine = indent + right;
+                _lines.Insert(_cursorLine + 1, newLine);
 
                 _cursorLine++;
-                _cursorColumn = 0;
+                _cursorColumn = indent.Length;
 
+                ClearSelection();
                 ColorizeAll();
                 return;
             }
+
+
 
             string curLine = _lines[_cursorLine];
             _cursorColumn = Math.Clamp(_cursorColumn, 0, curLine.Length);
@@ -994,7 +1239,7 @@ namespace Starboard
             // Ctrl combos (no repeat)
             if (ctrl)
             {
-                if (ImGui.IsKeyPressed(ImGuiKey.Z, false))
+                if (ImGui.IsKeyPressed(ImGuiKey.Z, true))
                 {
                     if (shift)
                         Redo();      // Ctrl+Shift+Z
@@ -1015,18 +1260,18 @@ namespace Starboard
                     CutSelectionToClipboard();
 
                 if (ImGui.IsKeyPressed(ImGuiKey.V, false))
-                    PasteFromClipboard();
+                    PasteFromClipboard();                   
+
             }
 
             // Text input
             for (int i = 0; i < io.InputQueueCharacters.Size; i++)
             {
-                ushort u = io.InputQueueCharacters[i];
-                if (u == 0) continue;
-
-                char c = (char)u;
+                char c = (char)io.InputQueueCharacters[i];
                 if (!char.IsControl(c) || c == '\n' || c == '\t')
+                {
                     InsertChar(c);
+                }
             }
 
             // Navigation / editing keys
@@ -1036,23 +1281,100 @@ namespace Starboard
                 Delete();
             if (ImGui.IsKeyPressed(ImGuiKey.Enter, true))
                 InsertChar('\n');
-            if (ImGui.IsKeyPressed(ImGuiKey.Tab, true))
-                InsertChar('\t');
+            if (ImGui.IsKeyPressed(ImGuiKey.Tab, false))
+            {
+                if (!string.IsNullOrEmpty(_inlineSuggestion))
+                {
+                    // Consume Tab as "accept suggestion"
+                    AcceptInlineSuggestion();
+                }
+                else
+                {
+                    // Normal tab insertion
+                    InsertChar('\t');
+                }
+            }
 
             if (ImGui.IsKeyPressed(ImGuiKey.LeftArrow, true))
-                MoveLeft();
+            {
+                if (ctrl)
+                    _cursorColumn = FindPrevWordBoundary(_cursorLine, _cursorColumn);
+                else
+                    MoveLeft();
+
+                if (shift)
+                    BeginOrExtendSelection();
+                else
+                    ClearSelection();
+            }
+
             if (ImGui.IsKeyPressed(ImGuiKey.RightArrow, true))
-                MoveRight();
+            {
+                if (ctrl)
+                    _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
+                else
+                    MoveRight();
+                if (shift)
+                    BeginOrExtendSelection();
+                else
+                    ClearSelection();
+            }
+
             if (ImGui.IsKeyPressed(ImGuiKey.UpArrow, true))
-                MoveUp();
+            {
+                if (ctrl)
+                    _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
+                else MoveUp();
+
+                if (shift)
+                    BeginOrExtendSelection();
+                else ClearSelection();
+            }
+
             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow, true))
-                MoveDown();
+            {
+                if (ctrl)
+                    _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
+                else MoveDown();
+
+                if (shift)
+                    BeginOrExtendSelection();
+                else ClearSelection();
+            }
+
             if (ImGui.IsKeyPressed(ImGuiKey.Home, true))
-                MoveHome();
+            {
+                int smart = GetSmartHomeColumn(_cursorLine);
+                if (_cursorColumn == smart)
+                    _cursorColumn = 0;
+                else
+                    _cursorColumn = smart;
+
+                if (shift)
+                    BeginOrExtendSelection();
+                else
+                    ClearSelection();
+            }
+
             if (ImGui.IsKeyPressed(ImGuiKey.End, true))
-                MoveEnd();
+            {
+                _cursorColumn = _lines[_cursorLine].Length;
+                if (shift)
+                    BeginOrExtendSelection();
+                else
+                    ClearSelection();
+            }
+
+            if (ctrl && ImGui.IsKeyPressed(ImGuiKey.F, false))
+            {
+                _searchOpen = true;
+            }
+
+
 
             EnsureCursorInBounds();
+
+            UpdateInlineSuggestion();
         }
 
         // ---------------------------------------------------------------------
@@ -1252,12 +1574,37 @@ namespace Starboard
             _charAdvance = ImGui.CalcTextSize("X").X;
 
             var io = ImGui.GetIO();
-            bool hovered = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows);
+            bool hovered = ImGui.IsWindowHovered();
+
+            if (hovered && io.MouseWheelH != 0.0f)
+            {
+                float scrollStep = ImGui.GetTextLineHeightWithSpacing() * 4.0f;
+
+                float scrollX = ImGui.GetScrollX();
+                scrollX -= io.MouseWheelH * scrollStep;
+
+                ImGui.SetScrollX(scrollX);
+            }
+
+
+            // ---- compute gutter width for line numbers ----
+            int lineCount = Math.Max(1, _lines.Count);
+            int digits = lineCount.ToString().Length;
+            string sample = new string('9', digits);
+            float numWidth = ImGui.CalcTextSize(sample).X;
+
+            float gutterPadding = 6.0f; // px on each side of the number
+            float gutterWidth = numWidth + gutterPadding * 2.0f;
+
+            // Text area starts to the right of the gutter
+            Vector2 textOrigin = origin + new Vector2(gutterWidth, 0);
+
+            float maxLinePixelWidth = gutterWidth; // at least gutter width
 
             // Mouse selection / caret placement
             if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
             {
-                SetCaretFromMouse(io.MousePos, origin, lineSpacing);
+                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
 
                 _isSelecting = true;
                 _selStartLine = _cursorLine;
@@ -1267,13 +1614,13 @@ namespace Starboard
             }
             else if (_isSelecting && ImGui.IsMouseDown(ImGuiMouseButton.Left))
             {
-                SetCaretFromMouse(io.MousePos, origin, lineSpacing);
+                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
                 _selEndLine = _cursorLine;
                 _selEndColumn = _cursorColumn;
             }
             else if (_isSelecting && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
             {
-                SetCaretFromMouse(io.MousePos, origin, lineSpacing);
+                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
                 _selEndLine = _cursorLine;
                 _selEndColumn = _cursorColumn;
                 _isSelecting = false;
@@ -1295,10 +1642,33 @@ namespace Starboard
 
             GetSelectionBounds(out int selStartLine, out int selStartCol, out int selEndLine, out int selEndCol);
 
+            {
+                Vector2 sepTop = origin + new Vector2(gutterWidth - gutterPadding * 0.5f, 0);
+                Vector2 sepBot = sepTop + new Vector2(0, _lines.Count * lineSpacing);
+                drawList.AddLine(sepTop, sepBot, ImGui.GetColorU32(_colIndentGuide), 1.0f);
+            }
+
             for (int lineIndex = 0; lineIndex < _lines.Count; lineIndex++)
             {
                 string line = _lines[lineIndex];
-                Vector2 linePos = origin + new Vector2(0, lineIndex * lineSpacing);
+
+                Vector2 lineBase = origin + new Vector2(0, lineIndex * lineSpacing);
+
+                Vector2 linePos = lineBase + new Vector2(gutterWidth, 0);
+
+                float linePixelWidth = gutterWidth;
+
+                // ---- draw line number in gutter ----
+                string numText = (lineIndex + 1).ToString();
+                Vector2 numSize = ImGui.CalcTextSize(numText);
+
+                float numX = lineBase.X + gutterWidth - gutterPadding - numSize.X;
+                float numY = lineBase.Y;
+
+                drawList.AddText(
+                    new Vector2(numX, numY),
+                    ImGui.GetColorU32(_colLineNumber),
+                    numText);
 
                 // Compute nesting level per bracket column on this line
                 var bracketLevels = new Dictionary<int, int>();
@@ -1392,6 +1762,29 @@ namespace Starboard
                     }
                 }
 
+                if (lineIndex == _searchResultLine &&
+                    _searchResultCol >= 0 &&
+                    !string.IsNullOrEmpty(_findText))
+                {
+                    int matchLen = Math.Min(_findText.Length, line.Length - _searchResultCol);
+                    if (matchLen > 0)
+                    {
+                        string prefix = line.Substring(0, _searchResultCol);
+                        float xStart = linePos.X + ImGui.CalcTextSize(prefix).X;
+
+                        string match = line.Substring(_searchResultCol, matchLen);
+                        float xEnd = xStart + ImGui.CalcTextSize(match).X;
+
+                        Vector2 a = new(xStart, linePos.Y);
+                        Vector2 b = new(xEnd, linePos.Y + _lineHeight);
+
+                        drawList.AddRectFilled(a, b,
+                            ImGui.GetColorU32(new Vector4(0.8f, 0.4f, 0.2f, 0.45f)));
+                    }
+                }
+
+
+
                 tokensByLine.TryGetValue(lineIndex, out var tokenList);
 
                 // Caret (VSCode-style blink, only when focused)
@@ -1471,6 +1864,19 @@ namespace Starboard
                         Vector2 caretMax = new(caretX + 1.0f, linePos.Y + _lineHeight);
                         uint caretColor = ImGui.GetColorU32(_colCaret);
                         drawList.AddRectFilled(caretMin, caretMax, caretColor);
+                    }
+
+                    // After drawing caret:
+                    if (!string.IsNullOrEmpty(_inlineSuggestion) &&
+                        _inlineSuggestionLine == lineIndex &&
+                        _inlineSuggestionColumn == _cursorColumn)
+                    {
+                        // Draw ghost text in a dimmed default colour
+                        Vector4 ghostCol = _colDefault;
+                        ghostCol.W *= 0.35f; // lower alpha
+
+                        Vector2 ghostPos = new(caretX, linePos.Y);
+                        drawList.AddText(ghostPos, ImGui.GetColorU32(ghostCol), _inlineSuggestion);
                     }
                 }
 
@@ -1560,11 +1966,502 @@ namespace Starboard
                     Vector2 pos = linePos + new Vector2(x, 0);
                     drawList.AddText(pos, ImGui.GetColorU32(_colDefault), tail);
                 }
+
+                linePixelWidth = gutterWidth + x;
+                if (linePixelWidth > maxLinePixelWidth)
+                    maxLinePixelWidth = linePixelWidth;
             }
 
-            ImGui.Dummy(new Vector2(0, _lines.Count * lineSpacing));
+            ImGui.Dummy(new Vector2(maxLinePixelWidth, _lines.Count * lineSpacing));
 
             HandleCompletionPopup();
         }
+
+        // Cache XML docs per assembly path
+        private static readonly Dictionary<string, XDocument> _xmlDocCache = new();
+
+        // Build the member name used in the XML docs, e.g.
+        // M:Starboard.Lua.LuaUiApi.text(System.String)
+        private static string GetXmlMemberName(MethodInfo method)
+        {
+            var type = method.DeclaringType;
+            if (type == null)
+                throw new InvalidOperationException("Method has no DeclaringType.");
+
+            var sb = new StringBuilder();
+            sb.Append("M:");
+            sb.Append(type.FullName!.Replace('+', '.')); // nested types
+
+            sb.Append(".");
+            sb.Append(method.Name);
+
+            var pars = method.GetParameters();
+            if (pars.Length > 0)
+            {
+                sb.Append("(");
+                sb.Append(string.Join(",", pars.Select(p => GetXmlTypeName(p.ParameterType))));
+                sb.Append(")");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GetXmlTypeName(Type type)
+        {
+            // XML docs strip ref-ness in the type name, so handle ref/out
+            if (type.IsByRef)
+                type = type.GetElementType()!;
+
+            // Handle generics like System.Collections.Generic.List{System.String}
+            if (type.IsGenericType)
+            {
+                var genericDef = type.GetGenericTypeDefinition();
+                string genericName = genericDef.FullName!;
+                int tickIdx = genericName.IndexOf('`');
+                if (tickIdx >= 0)
+                    genericName = genericName[..tickIdx];
+
+                var args = type.GetGenericArguments().Select(GetXmlTypeName);
+                return $"{genericName}{{{string.Join(",", args)}}}";
+            }
+
+            return type.FullName!;
+        }
+
+        private static string? TryGetXmlSummary(MethodInfo method)
+        {
+            var asm = method.DeclaringType?.Assembly;
+            if (asm == null)
+                return null;
+
+            var xmlPath = Path.ChangeExtension(asm.Location, ".xml");
+            if (string.IsNullOrEmpty(xmlPath) || !File.Exists(xmlPath))
+                return null;
+
+            if (!_xmlDocCache.TryGetValue(xmlPath, out var doc))
+            {
+                try
+                {
+                    doc = XDocument.Load(xmlPath);
+                    _xmlDocCache[xmlPath] = doc;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            var memberName = GetXmlMemberName(method);
+
+            var member = doc.Descendants("member")
+                            .FirstOrDefault(m => (string?)m.Attribute("name") == memberName);
+
+            var rawSummary = member?.Element("summary")?.Value;
+            if (string.IsNullOrWhiteSpace(rawSummary))
+                return null;
+
+            // Clean up whitespace / newlines
+            var cleaned = string.Join(" ",
+                rawSummary.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+            return cleaned.Trim();
+        }
+
+        private static string BuildCompletionLabel(CompletionItem item, float maxWidth)
+        {
+            // 1) Clean up summary so the font can render everything
+            string summary = item.Summary ?? string.Empty;
+
+            summary = summary
+                .Replace('–', '-')   // en dash
+                .Replace('—', '-')   // em dash
+                .Replace('\u2018', '\'').Replace('\u2019', '\'') // curly '
+                .Replace('\u201C', '"').Replace('\u201D', '"')   // curly "
+                .Replace('\u2026', '…');                       // ellipsis -> "..."
+
+            string baseLabel = $"{summary}";
+
+            // No need to truncate if it already fits
+            if (ImGui.CalcTextSize(baseLabel).X <= maxWidth)
+                return baseLabel;
+
+            // Leave room for "..."
+            const string ellipsis = "...";
+            float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
+            float targetWidth = maxWidth - ellipsisWidth - 4f;
+            if (targetWidth <= 0)
+                return item.Name; // really narrow, just show the name
+
+            // 2) Binary search the longest substring that fits in targetWidth
+            int lo = 0;
+            int hi = baseLabel.Length;
+
+            while (lo < hi)
+            {
+                int mid = (lo + hi) / 2;
+                string substr = baseLabel.Substring(0, mid);
+                float w = ImGui.CalcTextSize(substr).X;
+
+                if (w <= targetWidth)
+                    lo = mid + 1;
+                else
+                    hi = mid;
+            }
+
+            int len = Math.Max(0, lo - 1);
+            return baseLabel.Substring(0, len) + ellipsis;
+        }
+
+        private static bool IsWordChar(char c)
+    => char.IsLetterOrDigit(c) || c == '_';
+
+        private int FindPrevWordBoundary(int lineIndex, int col)
+        {
+            string line = _lines[lineIndex];
+            col = Math.Clamp(col, 0, line.Length);
+
+            // Skip spaces first
+            while (col > 0 && char.IsWhiteSpace(line[col - 1]))
+                col--;
+
+            // Then skip word chars
+            while (col > 0 && IsWordChar(line[col - 1]))
+                col--;
+
+            return col;
+        }
+
+        private int FindNextWordBoundary(int lineIndex, int col)
+        {
+            string line = _lines[lineIndex];
+            col = Math.Clamp(col, 0, line.Length);
+
+            int n = line.Length;
+
+            // Skip spaces
+            while (col < n && char.IsWhiteSpace(line[col]))
+                col++;
+
+            // Skip word chars
+            while (col < n && IsWordChar(line[col]))
+                col++;
+
+            return col;
+        }
+
+        private void BeginOrExtendSelection()
+        {
+            if (!HasSelection)
+            {
+                _selStartLine = _cursorLine;
+                _selStartColumn = _cursorColumn;
+            }
+            _selEndLine = _cursorLine;
+            _selEndColumn = _cursorColumn;
+        }
+
+        private int GetSmartHomeColumn(int lineIndex)
+        {
+            string line = _lines[lineIndex];
+            int i = 0;
+            while (i < line.Length && (line[i] == ' ' || line[i] == '\t'))
+                i++;
+            return i;
+        }
+
+        private void ClearSearchResult()
+        {
+            _searchResultLine = -1;
+            _searchResultCol = -1;
+        }
+
+        private void SearchNext()
+        {
+            DoSearch(forward: true);
+        }
+
+        private void SearchPrev()
+        {
+            DoSearch(forward: false);
+        }
+
+        private void DoSearch(bool forward)
+        {
+            ClearSelection();
+
+            if (string.IsNullOrWhiteSpace(_findText) || _lines.Count == 0)
+            {
+                ClearSearchResult();
+                return;
+            }
+
+            string needle = _findText;
+            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+            // Starting point: current match if any, otherwise caret
+            int startLine = _searchResultLine >= 0 ? _searchResultLine : _cursorLine;
+            int startCol = _searchResultLine >= 0 ? _searchResultCol : _cursorColumn;
+
+            int lineCount = _lines.Count;
+
+            if (forward)
+            {
+                int line = startLine;
+                int col = startCol + (_searchResultLine >= 0 ? 1 : 0); // move past current
+
+                for (int wrap = 0; wrap < 2; wrap++)
+                {
+                    for (; line < lineCount; line++)
+                    {
+                        string text = _lines[line];
+                        int searchFrom = (line == startLine) ? col : 0;
+
+                        int idx = FindMatchInLine(text, needle, searchFrom, comparison, _wholeWord);
+                        if (idx >= 0)
+                        {
+                            _searchResultLine = line;
+                            _searchResultCol = idx;
+                            _cursorLine = line;
+                            _cursorColumn = idx;
+                            EnsureCursorInBounds();
+                            return;
+                        }
+                    }
+
+                    // Wrap to top
+                    line = 0;
+                    col = 0;
+                }
+            }
+            else // backward
+            {
+                int line = startLine;
+                int col = startCol - 1;
+                if (col < 0) { line--; col = int.MaxValue; }
+
+                for (int wrap = 0; wrap < 2; wrap++)
+                {
+                    for (; line >= 0; line--)
+                    {
+                        string text = _lines[line];
+                        int searchFrom = (line == startLine) ? Math.Min(col, text.Length - 1) : text.Length - 1;
+
+                        int idx = FindLastMatchInLine(text, needle, searchFrom, comparison, _wholeWord);
+                        if (idx >= 0)
+                        {
+                            _searchResultLine = line;
+                            _searchResultCol = idx;
+                            _cursorLine = line;
+                            _cursorColumn = idx;
+                            EnsureCursorInBounds();
+                            return;
+                        }
+                    }
+
+                    // Wrap to bottom
+                    line = lineCount - 1;
+                    col = int.MaxValue;
+                }
+            }
+
+            // No results
+            ClearSearchResult();
+        }
+
+        private int FindMatchInLine(string text, string needle, int startIndex,
+                                    StringComparison cmp, bool wholeWord)
+        {
+            if (startIndex < 0) startIndex = 0;
+            while (startIndex <= text.Length - needle.Length)
+            {
+                int idx = text.IndexOf(needle, startIndex, cmp);
+                if (idx < 0) return -1;
+
+                if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length))
+                    return idx;
+
+                startIndex = idx + 1;
+            }
+            return -1;
+        }
+
+        private int FindLastMatchInLine(string text, string needle, int startIndex,
+                                StringComparison cmp, bool wholeWord)
+        {
+            if (string.IsNullOrEmpty(text))
+                return -1;
+
+            // Clamp startIndex into valid range
+            if (startIndex < 0)
+                startIndex = text.Length - 1;
+            if (startIndex > text.Length - 1)
+                startIndex = text.Length - 1;
+
+            // Search backwards using the simpler overload
+            int idx = text.LastIndexOf(needle, startIndex, cmp);
+            while (idx >= 0)
+            {
+                if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length))
+                    return idx;
+
+                // Move one char left and keep searching
+                if (idx == 0)
+                    break;
+
+                idx = text.LastIndexOf(needle, idx - 1, cmp);
+            }
+
+            return -1;
+        }
+
+
+        private bool IsWholeWordMatch(string text, int index, int length)
+        {
+            int start = index;
+            int end = index + length;
+
+            bool leftOk = (start == 0) || !IsWordChar(text[start - 1]);
+            bool rightOk = (end >= text.Length) || !IsWordChar(text[end]);
+
+            return leftOk && rightOk;
+        }
+
+        private void ReplaceCurrent()
+        {
+            if (string.IsNullOrEmpty(_findText))
+                return;
+
+            if (_searchResultLine < 0 || _searchResultCol < 0)
+                return;
+
+            string needle = _findText;
+            string replacement = _replaceText ?? string.Empty;
+
+            string line = _lines[_searchResultLine];
+
+            // Safety in case indices are stale
+            if (_searchResultCol + needle.Length > line.Length)
+                return;
+
+            PushUndoState();
+
+            string before = line.Substring(0, _searchResultCol);
+            string after = line.Substring(_searchResultCol + needle.Length);
+
+            _lines[_searchResultLine] = before + replacement + after;
+            ColorizeLine(_searchResultLine);
+
+            _cursorLine = _searchResultLine;
+            _cursorColumn = before.Length + replacement.Length;
+            ClearSelection();
+
+            // Clear current match and jump to NEXT one
+            _searchResultLine = -1;
+            _searchResultCol = -1;
+
+            DoSearch(true);   // <-- forward search
+        }
+
+
+        private void ReplaceAll()
+        {
+            if (string.IsNullOrEmpty(_findText) || _lines.Count == 0)
+                return;
+
+            string needle = _findText;
+            string replacement = _replaceText ?? string.Empty;
+            var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+            PushUndoState();
+
+            for (int lineIndex = 0; lineIndex < _lines.Count; lineIndex++)
+            {
+                string line = _lines[lineIndex];
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                int searchFrom = 0;
+                bool changed = false;
+
+                while (searchFrom <= line.Length - needle.Length)
+                {
+                    int idx = FindMatchInLine(line, needle, searchFrom, comparison, _wholeWord);
+                    if (idx < 0)
+                        break;
+
+                    line = line.Substring(0, idx) + replacement +
+                           line.Substring(idx + needle.Length);
+
+                    searchFrom = idx + replacement.Length;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    _lines[lineIndex] = line;
+                    ColorizeLine(lineIndex);
+                }
+            }
+
+            ClearSelection();
+            ClearSearchResult();   // your existing helper
+            EnsureCursorInBounds();
+        }
+
+
+
+        private void DrawSearchUI()
+        {
+            ImGui.PushItemWidth(-1);
+
+            if (ImGui.InputText("##find", ref _findText, 256))
+            {
+                // Reset search position when query changes
+                ClearSearchResult();
+                SearchNext();
+            }
+
+            ImGui.InputText("##replace", ref _replaceText, 256);
+
+            // Toggles
+            if (ImGui.Button("Aa")) _caseSensitive = !_caseSensitive;
+            ImGui.SameLine();
+            if (ImGui.Button("ab.")) _wholeWord = !_wholeWord;
+
+            ImGui.SameLine();
+            if (ImGui.Button("Prev")) SearchPrev();
+            ImGui.SameLine();
+            if (ImGui.Button("Next")) SearchNext();
+            ImGui.SameLine();
+
+            if (ImGui.Button(replaceLabel))
+            {
+                if (replaceLabel == "Replace")
+                {
+                    ReplaceCurrent();
+                }
+                else if (replaceLabel == "Replace All")
+                {
+                    ReplaceAll();
+                }
+            }
+
+            if (ImGui.IsItemHovered() && ImGui.GetIO().KeyShift)
+            {
+                replaceLabel = "Replace All";
+            }
+            else
+            {
+                replaceLabel = "Replace";
+            }
+
+                ImGui.SameLine();
+            if (ImGui.Button("X"))
+            {
+                _searchOpen = false;
+                ClearSearchResult();
+            }
+        }
+
     }
 }

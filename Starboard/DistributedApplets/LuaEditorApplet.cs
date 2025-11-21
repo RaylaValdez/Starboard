@@ -3,6 +3,8 @@ using Overlay_Renderer.Methods;
 using System.Numerics;
 using MoonSharp.Interpreter;
 using Starboard.Lua;
+using Starboard.Guis;
+using Windows.Networking.Sockets;
 
 namespace Starboard.DistributedApplets
 {
@@ -20,39 +22,99 @@ namespace Starboard.DistributedApplets
 
         private static ImFontPtr _orbiRegFont;
 
+        private sealed class EditorTab
+        {
+            public readonly TextEditor Editor = new();
+            public string Code = string.Empty;
+            public string LastSavedCode = string.Empty;
+            public string FilePath = string.Empty;
+            public string FileName = "Untitled.lua";
+            public string Status = "Idle";
 
+            public bool IsOpen = true;
 
-        // --- Code + file state ------------------------------------------------
+            public bool IsDirty =>
+                !string.Equals(Editor.Text, LastSavedCode, StringComparison.Ordinal);
+        }
+
+        private readonly List<EditorTab> _tabs = new();
+        private int _activeTabIndex = 0;
+
+        private EditorTab ActiveTab
+        {
+            get
+            {
+                if (_tabs.Count == 0)
+                    _tabs.Add(CreateDefaultTab());
+                _activeTabIndex = Math.Clamp(_activeTabIndex, 0, _tabs.Count - 1);
+                return _tabs[_activeTabIndex];
+            }
+        }
+
+        private static EditorTab CreateDefaultTab()
+        {
+            var tab = new EditorTab();
+            tab.Code = DefaultTemplate;
+            tab.LastSavedCode = tab.Code;
+            tab.FilePath = string.Empty;
+            tab.FileName = "Untitled.lua";
+            tab.Status = "Ready.";
+            tab.Editor.Text = tab.Code;
+
+            return tab;
+        }
 
         // Current buffer in the editor
-        private string _currentCode = @"app = {}
+        private const string DefaultTemplate = @"-- Every Lua applet **must** define a global table named `app`.
+-- Starboard reads functions from this table to understand your applet.
+app = {}
 
+-- app.id()
+-- This must return a unique ID string for your applet.
+-- Convention:
+--   ""user.<your_name>"" or ""user.<your_tool_name>""
+-- This ID is also used to persist your applet's state.
 function app.id()
-    return ""user.new_applet""
+    return ""user.test_state""
 end
 
+-- app.name()
+-- This is the friendly display name shown inside Starboard.
 function app.name()
-    return ""New Applet""
+    return ""Example Applet""
 end
 
-function app.draw(dt, w, h)
-    ui.text(""Hello from a Lua applet created in the editor!"")
+-- app.init()
+-- Optional.
+-- Runs once when the applet loads (or reloads after you modify the file).
+-- Great for setting default values the first time.
+-- `state` is a persistent table: anything you put in here is
+-- automatically saved & restored across sessions.
+function app.init()
+    state.counter = state.counter or 0
+    state.name = state.name or ""Unnamed""
+end
+
+-- app.draw(dt, w, h)
+-- Called every frame while the applet is selected.
+--   dt = seconds since last frame
+--   w, h = the size of your applet's panel (if needed)
+--
+-- Use ImGui via the `ui` table (ui.text, ui.button, ui.slider_float, etc.) 
+function app.draw(dt, w, h) 
+    ui.text(""Hello, "" .. (state.name or ""???""))
+    ui.text(""Counter: "" .. tostring(state.counter or 0))
+
+    -- ui.button returns true on click
+    if ui.button(""Increment"") then
+        state.counter = (state.counter or 0) + 1
+    end
 end
 ";
 
-        // Last-saved buffer (for dirty tracking)
-        private string _lastSavedCode = string.Empty;
-
-        // Path on disk of the current file (if any)
-        private string _currentFilePath = string.Empty;
-
-        // Just the name for UI purposes (tab title)
-        private string _currentFileName = "Untitled.lua";
-
-        // Status line at the bottom of the editor
-        private string _status = "Idle";
-
-        private bool IsDirty => _currentCode != _lastSavedCode;
+        private int _pendingCloseTabIndex = -1;
+        private int _pendingImmediateCloseIndex = -1;
+        private bool _popupOpenRequested = false;
 
         private static string GetExternDir()
         {
@@ -69,9 +131,9 @@ end
 
         public void Initialize()
         {
-            _editor.Text =_currentCode;
-            _lastSavedCode = _currentCode;
-            _status = "Ready.";
+            _tabs.Clear();
+            _tabs.Add(CreateDefaultTab());
+            _activeTabIndex = 0;
         }
 
         public void Draw(float dt, Vector2 availableSize)
@@ -81,6 +143,36 @@ end
             if (!ImGui.BeginChild("Editor", availableSize, ImGuiChildFlags.Borders, ImGuiWindowFlags.MenuBar))
                 return;
 
+            var io = ImGui.GetIO();
+            var tab = ActiveTab;
+
+            // Handle any clean-tab close requested last frame
+            if (_pendingImmediateCloseIndex >= 0)
+            {
+                CloseTab(_pendingImmediateCloseIndex);
+                _pendingImmediateCloseIndex = -1;
+            }
+
+            bool editorFocused = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows);
+
+            if (editorFocused && io.KeyCtrl)
+            {
+                if (ImGui.IsKeyPressed(ImGuiKey.N, false))
+                {
+                    NewFileTab();
+                }
+
+                if (ImGui.IsKeyPressed(ImGuiKey.W, false))
+                {
+                    RequestCloseTab(_activeTabIndex);
+                }
+
+                if (ImGui.IsKeyPressed(ImGuiKey.S, false))
+                {
+                    SaveFile();
+                }
+            }
+
             // --- Menu bar -----------------------------------------------------
             if (ImGui.BeginMenuBar())
             {
@@ -88,25 +180,27 @@ end
                 {
                     if (ImGui.MenuItem("New"))
                     {
-                        NewFile();
+                        NewFileTab();
                     }
 
                     if (ImGui.MenuItem("Open"))
                     {
-                        OpenFile();
+                        OpenFileIntoNewTab();
                     }
 
-                    if (ImGui.MenuItem("Save", enabled: true))
+                    bool hasTab = _tabs.Count > 0;
+
+                    if (ImGui.MenuItem("Save", shortcut: null, selected: false, enabled: hasTab))
                     {
                         SaveFile();
                     }
 
-                    if (ImGui.MenuItem("Save As"))
+                    if (ImGui.MenuItem("Save As", shortcut: null, selected: false, enabled: hasTab))
                     {
                         SaveFileAs();
                     }
 
-                    if (ImGui.MenuItem("Validate"))
+                    if (ImGui.MenuItem("Validate", shortcut: null, selected: false, enabled: hasTab))
                     {
                         ValidateCurrentCode();
                     }
@@ -114,7 +208,9 @@ end
                     ImGui.EndMenu();
                 }
 
-                if (ImGui.BeginMenu(_status))
+                string status = ActiveTab.Status;
+
+                if (ImGui.BeginMenu(status))
                 {
                     ImGui.EndMenu();
                 }
@@ -123,21 +219,139 @@ end
             }
 
             // --- Editor tabs --------------------------------------------------
-            if (ImGui.BeginTabBar("EditorTabs", ImGuiTabBarFlags.Reorderable))
+            if (ImGui.BeginTabBar("EditorTabs",
+                ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.AutoSelectNewTabs))
             {
-                // Tab title: "Untitled.lua" or "foo.lua*", with * if unsaved
-                string tabTitle = $"{_currentFileName}{(IsDirty ? "*" : string.Empty)}";
-
-                if (ImGui.BeginTabItem(tabTitle))
+                for (int i = 0; i < _tabs.Count; i++)
                 {
-                    Vector2 curAvailRegion = ImGui.GetContentRegionAvail();
-                    _editor.Render("##LuaTextEditor", curAvailRegion);
-                    _currentCode = _editor.Text;
-                    ImGui.EndTabItem();
+                    var t = _tabs[i];
+
+                    string visibleTitle = $"{t.FileName}{(t.IsDirty ? "*" : string.Empty)}";
+                    string tabTitle = $"{visibleTitle}##tab_{i}";
+
+                    // Per-tab open flag for ImGui
+                    bool open = t.IsOpen;
+
+                    // BeginTabItem will flip 'open' to false when the user clicks X or MMB
+                    if (ImGui.BeginTabItem(tabTitle, ref open))
+                    {
+                        _activeTabIndex = i;
+
+                        Vector2 curAvailRegion = ImGui.GetContentRegionAvail();
+                        t.Editor.Render($"##LuaTextEditor_{i}", curAvailRegion);
+                        t.Code = t.Editor.Text;
+
+                        ImGui.EndTabItem();
+                    }
+
+                    // Detect a close request this frame (X or middle-click):
+                    if (t.IsOpen && !open)
+                    {
+                        bool wasDirty = t.IsDirty;
+
+                        // Route through our unified close logic
+                        RequestCloseTab(i);
+
+                        // If it was dirty, keep it open until the user answers the popup
+                        if (wasDirty)
+                        {
+                            open = true;
+                        }
+                    }
+
+                    // Persist updated state for next frame
+                    t.IsOpen = open;
+                }
+                if (ImGui.TabItemButton("+",ImGuiTabItemFlags.Trailing))
+                {
+                    NewFileTab();
                 }
 
                 ImGui.EndTabBar();
+
+                if (_pendingCloseTabIndex >= 0 && _popupOpenRequested)
+                {
+                    ImGui.OpenPopup("Unsaved Changes");
+                    _popupOpenRequested = false;
+                }
             }
+
+
+
+            // Unsaved-changes modal
+            if (_pendingCloseTabIndex >= 0)
+            {
+                ImGui.SetNextWindowSize(new Vector2(420, 0), ImGuiCond.FirstUseEver);
+                bool dummyOpen = true; // ImGui needs a ref bool, we manage close ourselves
+
+                Vector2 winPos = ImGui.GetWindowPos();
+                Vector2 winSize = ImGui.GetWindowSize();
+                Vector2 popupSize = new(420, 150);
+
+                ImGui.SetNextWindowPos(
+                    winPos + (winSize - popupSize) * 0.5f,
+                    ImGuiCond.Always);
+
+                ImGui.SetNextWindowSize(popupSize, ImGuiCond.Always);
+
+                var style = ImGui.GetStyle();
+
+                style.Colors[(int)ImGuiCol.PopupBg] = new Vector4(0.10f, 0.12f, 0.16f, 0.98f);
+                style.Colors[(int)ImGuiCol.ModalWindowDimBg] = new Vector4(0f, 0f, 0f, 0f);
+
+
+                if (ImGui.BeginPopupModal("Unsaved Changes", ref dummyOpen, ImGuiWindowFlags.AlwaysAutoResize))
+                {
+                    int idx = _pendingCloseTabIndex;
+                    if (idx < 0 || idx >= _tabs.Count)
+                    {
+                        _pendingCloseTabIndex = -1;
+                        ImGui.CloseCurrentPopup();
+                    }
+                    else
+                    {
+                        var t = _tabs[idx];
+
+                        ImGui.TextWrapped($"You have unsaved changes in '{t.FileName}'.");
+                        ImGui.Spacing();
+                        ImGui.TextWrapped("What would you like to do?");
+                        ImGui.Dummy(new Vector2(0, 8));
+
+                        // Save
+                        if (ImGui.Button("Save", new Vector2(100, 0)))
+                        {
+                            if (SaveTab(idx))
+                            {
+                                CloseTab(idx);
+                                _pendingCloseTabIndex = -1;
+                                ImGui.CloseCurrentPopup();
+                            }
+                        }
+
+                        ImGui.SameLine();
+
+                        // Discard
+                        if (ImGui.Button("Discard", new Vector2(100, 0)))
+                        {
+                            CloseTab(idx);
+                            _pendingCloseTabIndex = -1;
+                            ImGui.CloseCurrentPopup();
+                        }
+
+                        ImGui.SameLine();
+
+                        // Cancel
+                        if (ImGui.Button("Cancel", new Vector2(100, 0)))
+                        {
+                            _pendingCloseTabIndex = -1;
+                            ImGui.CloseCurrentPopup();
+                        }
+                    }
+
+                    ImGui.EndPopup();
+                }
+            }
+
 
             ImGui.EndChild();
 
@@ -148,31 +362,51 @@ end
         // File ops
         // ---------------------------------------------------------------------
 
-        private void NewFile()
+        private void RequestCloseTab(int index)
         {
-            // In future: optional "do you want to save changes?" prompt
-            _currentCode = @"app = {}
+            if (index < 0 || index >= _tabs.Count)
+                return;
 
-function app.id()
-    return ""user.new_applet""
-end
+            var tab = _tabs[index];
 
-function app.name()
-    return ""New Applet""
-end
+            // Clean tab: close silently, but do it *outside* the tab-bar loop.
+            if (!tab.IsDirty)
+            {
+                _pendingImmediateCloseIndex = index;
+                return;
+            }
 
-function app.draw(dt, w, h)
-    ui.text(""Hello from a Lua applet created in the editor!"")
-end
-";
-            _editor.Text = _currentCode;
-            _lastSavedCode = _currentCode;
-            _currentFilePath = string.Empty;
-            _currentFileName = "Untitled.lua";
-            _status = "New file created.";
+            // Dirty -> ask the user via modal popup
+            _pendingCloseTabIndex = index;
+            _popupOpenRequested = true;
         }
 
-        private void OpenFile()
+
+        private void CloseTab(int index)
+        {
+            if (index < 0 || index >= _tabs.Count) { return; }
+
+            _tabs.RemoveAt(index);
+
+            if (_tabs.Count == 0)
+            {
+                _tabs.Add(CreateDefaultTab());
+                _activeTabIndex = 0;
+            }
+            else
+            {
+                _activeTabIndex = Math.Clamp(_activeTabIndex, 0, _tabs.Count - 1);
+            }
+        }
+
+        private void NewFileTab()
+        {
+            var tab = CreateDefaultTab();
+            _tabs.Add(tab);
+            _activeTabIndex = _tabs.Count - 1;
+        }
+
+        private void OpenFileIntoNewTab()
         {
             try
             {
@@ -186,74 +420,121 @@ end
                     string path = ofd.FileName;
                     string code = File.ReadAllText(path);
 
-                    _currentCode = code;
-                    _editor.Text = _currentCode;
-                    _lastSavedCode = code;
-                    _currentFilePath = path;
-                    _currentFileName = Path.GetFileName(path);
-                    _status = $"Opened '{_currentFileName}'.";
+                    var tab = new EditorTab
+                    {
+                        Code = code,
+                        LastSavedCode = code,
+                        FilePath = path,
+                        FileName = Path.GetFileName(path),
+                        Status = $"Opened '{Path.GetFileName(path)}'."
+                    };
+                    tab.Editor.Text = code;
+
+                    _tabs.Add(tab);
+                    _activeTabIndex = _tabs.Count - 1;
                 }
             }
             catch (Exception ex)
             {
-                _status = $"Error opening file: {ex.Message}";
+                ActiveTab.Status = $"Error opening file: {ex.Message}";
             }
         }
 
-        private void SaveFile()
+        private bool SaveTab(int index)
         {
-            if (string.IsNullOrWhiteSpace(_currentFilePath))
-            {
-                SaveFileAs();
-                return;
-            }
+            if (index < 0 || index >= _tabs.Count)
+                return false;
+
+            var tab = _tabs[index];
+
+            // No path yet? Behave like Save As
+            if (string.IsNullOrWhiteSpace(tab.FilePath))
+                return SaveTabAs(index);
 
             try
             {
-                _currentCode = _editor.Text;
-                File.WriteAllText(_currentFilePath, _currentCode);
-                _lastSavedCode = _currentCode;
-                _status = $"Saved '{_currentFileName}'.";
+                string text = tab.Editor.Text;
+
+                File.WriteAllText(tab.FilePath, text);
+                tab.LastSavedCode = text;
+                tab.Code = text; // optional, if you still want to keep Code in sync
+                tab.Status = $"Saved '{tab.FileName}'.";
+
+                // Keep ExternApplets in sync
+                string externDir = GetExternDir();
+                string scriptPath = Path.Combine(externDir, tab.FileName);
+                File.WriteAllText(scriptPath, text);
+
+                StarboardMain.RegisterOrUpdateLuaApplet(scriptPath, selectAfterAdd: true);
+                return true;
             }
             catch (Exception ex)
             {
-                _status = $"Error saving file: {ex.Message}";
+                tab.Status = $"Error saving file: {ex.Message}";
+                return false;
             }
         }
 
-        private void SaveFileAs()
+
+        private bool SaveTabAs(int index)
         {
+            if (index < 0 || index >= _tabs.Count)
+                return false;
+
+            var tab = _tabs[index];
+
             try
             {
                 using var sfd = new SaveFileDialog();
                 sfd.Filter = "Lua files (*.lua)|*.lua|All files (*.*)|*.*";
                 sfd.InitialDirectory = GetExternDir();
                 sfd.Title = "Save Lua applet as";
-                sfd.FileName = _currentFileName;
+                sfd.FileName = tab.FileName;
 
-                if (sfd.ShowDialog() == DialogResult.OK)
+                if (sfd.ShowDialog() != DialogResult.OK)
+                    return false;
+
+                string path = sfd.FileName;
+                if (string.IsNullOrWhiteSpace(Path.GetExtension(path)))
+                    path += ".lua";
+
+                string text = tab.Editor.Text;
+
+                File.WriteAllText(path, text);
+
+                tab.FilePath = path;
+                tab.FileName = Path.GetFileName(path);
+                tab.LastSavedCode = text;
+                tab.Code = text; // optional
+                tab.Status = $"Saved as '{tab.FileName}'.";
+
+                string externDir = GetExternDir();
+                string scriptPath = Path.Combine(externDir, tab.FileName);
+                if (!string.Equals(Path.GetFullPath(path), Path.GetFullPath(scriptPath), StringComparison.OrdinalIgnoreCase))
                 {
-                    string path = sfd.FileName;
-
-                    // Ensure .lua extension
-                    if (string.IsNullOrWhiteSpace(Path.GetExtension(path)))
-                    {
-                        path += ".lua";
-                    }
-
-                    _currentCode = _editor.Text;
-                    File.WriteAllText(path, _currentCode);
-
-                    _currentFilePath = path;
-                    _currentFileName = Path.GetFileName(path);
-                    _lastSavedCode = _currentCode;
-                    _status = $"Saved as '{_currentFileName}'.";
+                    File.Copy(path, scriptPath, overwrite: true);
                 }
+
+                StarboardMain.RegisterOrUpdateLuaApplet(scriptPath, selectAfterAdd: true);
+                return true;
             }
             catch (Exception ex)
             {
-                _status = $"Error saving file: {ex.Message}";
+                tab.Status = $"Error saving file: {ex.Message}";
+                return false;
             }
+        }
+
+
+
+        private void SaveFile()
+        {
+            SaveTab(_activeTabIndex);
+        }
+
+        private void SaveFileAs()
+        {
+            SaveTabAs(_activeTabIndex);
         }
 
         // ---------------------------------------------------------------------
@@ -262,18 +543,17 @@ end
 
         private void ValidateCurrentCode()
         {
-            _currentCode = _editor.Text;
+            var tab = ActiveTab;
+            tab.Code = tab.Editor.Text;
+
             try
             {
-                // Create a sandboxed Lua script same way LuaApplet does
                 var script = LuaEngine.CreateScript();
 
-                // Make sure ui.* exists just like in the real applet environment
                 UserData.RegisterType<LuaUiApi>();
                 script.Globals["ui"] = UserData.Create(new LuaUiApi());
 
-                // Run the current buffer
-                script.DoString(_currentCode);
+                script.DoString(tab.Code);
 
                 var appVal = script.Globals.Get("app");
                 if (appVal.Type != DataType.Table)
@@ -287,22 +567,22 @@ end
 
                 string? name = CallStringFunc(script, appTable, "name");
 
-                _status = $"OK – app.id() = '{id}', app.name() = '{(name ?? id)}'.";
+                tab.Status = $"OK! All checks passed for: '{(name)}'.";
             }
             catch (SyntaxErrorException ex)
             {
-                // Syntax error with line info
-                _status = $"Syntax error: {ex.DecoratedMessage ?? ex.Message}";
+                tab.Status = $"Syntax error: {ex.DecoratedMessage ?? ex.Message}";
             }
             catch (ScriptRuntimeException ex)
             {
-                _status = $"Runtime error: {ex.DecoratedMessage ?? ex.Message}";
+                tab.Status = $"Runtime error: {ex.DecoratedMessage ?? ex.Message}";
             }
             catch (Exception ex)
             {
-                _status = $"Validation error: {ex.Message}";
+                tab.Status = $"Validation error: {ex.Message}";
             }
         }
+
 
         private static string? CallStringFunc(Script script, Table appTable, string funcName)
         {
