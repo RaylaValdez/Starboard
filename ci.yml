@@ -9,7 +9,6 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      # Base major.minor you want for this branch (edit as you bump features)
       BASE_VERSION: 0.18
     steps:
       - name: Checkout
@@ -33,14 +32,12 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      # Build both projects with the computed version (without editing csproj)
       - name: Build Starboard
         run: dotnet build Starboard/Starboard.csproj -c Release -p:Version=${{ steps.ver.outputs.version }} -p:ContinuousIntegrationBuild=true
 
       - name: Build Overlay-Renderer
         run: dotnet build Overlay-Renderer/Overlay-Renderer.csproj -c Release -p:Version=${{ steps.ver.outputs.version }} -p:ContinuousIntegrationBuild=true
 
-      # Publish artifacts (optional)
       - name: Publish Starboard
         run: dotnet publish Starboard/Starboard.csproj -c Release -p:Version=${{ steps.ver.outputs.version }} -p:ContinuousIntegrationBuild=true -o out/starboard
 
