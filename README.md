@@ -14,6 +14,7 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 - Preloaded with handy community made websites.
 - Lua API for writing applets!
 - DragNDrop importing of luaapplets!
+- Full Fledged lua editor applet for making applets live!
 
 ---
 
