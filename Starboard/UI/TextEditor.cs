@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
 
-namespace Starboard
+namespace Starboard.UI
 {
     internal sealed class TextEditor
     {
@@ -421,8 +421,7 @@ namespace Starboard
                 startCol = Math.Clamp(startCol, 0, first.Length);
                 endCol = Math.Clamp(endCol, 0, last.Length);
 
-                string merged = first.Substring(0, startCol) +
-                                last.Substring(endCol);
+                string merged = string.Concat(first.AsSpan(0, startCol), last.AsSpan(endCol));
 
                 _lines[startLine] = merged;
 
@@ -502,14 +501,14 @@ namespace Starboard
                 endCol = Math.Clamp(endCol, 0, line.Length);
 
                 if (endCol > startCol)
-                    sb.Append(line.Substring(startCol, endCol - startCol));
+                    sb.Append(line.AsSpan(startCol, endCol - startCol));
             }
             else
             {
                 // first line
                 string first = _lines[startLine];
                 startCol = Math.Clamp(startCol, 0, first.Length);
-                sb.Append(first.Substring(startCol));
+                sb.Append(first.AsSpan(startCol));
                 sb.Append('\n');
 
                 // middle lines
@@ -522,7 +521,7 @@ namespace Starboard
                 // last line
                 string last = _lines[endLine];
                 endCol = Math.Clamp(endCol, 0, last.Length);
-                sb.Append(last.Substring(0, endCol));
+                sb.Append(last.AsSpan(0, endCol));
             }
 
             return sb.ToString();
@@ -684,8 +683,8 @@ namespace Starboard
             {
                 foreach (var item in _completionItems)
                 {
-                    if (item.Name.ToLowerInvariant().Contains(f) ||
-                        item.Signature.ToLowerInvariant().Contains(f))
+                    if (item.Name.Contains(f, StringComparison.InvariantCultureIgnoreCase) ||
+                        item.Signature.Contains(f, StringComparison.InvariantCultureIgnoreCase))
                     {
                         _completionFiltered.Add(item);
                     }
@@ -1525,7 +1524,7 @@ namespace Starboard
                 }
 
                 // Operators / punctuation we care to colour (including brackets)
-                if ("+-*/%=&|<>~^#()[]{}".IndexOf(c) >= 0)
+                if ("+-*/%=&|<>~^#()[]{}".Contains(c))
                 {
                     _tokens.Add(new Token
                     {
@@ -1546,7 +1545,7 @@ namespace Starboard
         // Rendering
         // ---------------------------------------------------------------------
 
-        private int CountIndentLevels(string line)
+        private static int CountIndentLevels(string line)
         {
             int spaces = 0;
             foreach (char c in line)
@@ -1989,15 +1988,15 @@ namespace Starboard
             sb.Append("M:");
             sb.Append(type.FullName!.Replace('+', '.')); // nested types
 
-            sb.Append(".");
+            sb.Append('.');
             sb.Append(method.Name);
 
             var pars = method.GetParameters();
             if (pars.Length > 0)
             {
-                sb.Append("(");
+                sb.Append('(');
                 sb.Append(string.Join(",", pars.Select(p => GetXmlTypeName(p.ParameterType))));
-                sb.Append(")");
+                sb.Append(')');
             }
 
             return sb.ToString();
@@ -2106,7 +2105,7 @@ namespace Starboard
             }
 
             int len = Math.Max(0, lo - 1);
-            return baseLabel.Substring(0, len) + ellipsis;
+            return string.Concat(baseLabel.AsSpan(0, len), ellipsis);
         }
 
         private static bool IsWordChar(char c)
@@ -2265,7 +2264,7 @@ namespace Starboard
             ClearSearchResult();
         }
 
-        private int FindMatchInLine(string text, string needle, int startIndex,
+        private static int FindMatchInLine(string text, string needle, int startIndex,
                                     StringComparison cmp, bool wholeWord)
         {
             if (startIndex < 0) startIndex = 0;
@@ -2282,7 +2281,7 @@ namespace Starboard
             return -1;
         }
 
-        private int FindLastMatchInLine(string text, string needle, int startIndex,
+        private static int FindLastMatchInLine(string text, string needle, int startIndex,
                                 StringComparison cmp, bool wholeWord)
         {
             if (string.IsNullOrEmpty(text))
@@ -2312,7 +2311,7 @@ namespace Starboard
         }
 
 
-        private bool IsWholeWordMatch(string text, int index, int length)
+        private static bool IsWholeWordMatch(string text, int index, int length)
         {
             int start = index;
             int end = index + length;
@@ -2386,8 +2385,7 @@ namespace Starboard
                     if (idx < 0)
                         break;
 
-                    line = line.Substring(0, idx) + replacement +
-                           line.Substring(idx + needle.Length);
+                    line = string.Concat(line.AsSpan(0, idx), replacement, line.AsSpan(idx + needle.Length));
 
                     searchFrom = idx + replacement.Length;
                     changed = true;

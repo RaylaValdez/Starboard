@@ -8,7 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Numerics;
 
-namespace Starboard.Guis
+namespace Starboard.UI
 {
     internal class StarboardMain
     {

@@ -1,12 +1,18 @@
-﻿-- Same as before: always define the `app` table.
+﻿-- Every Lua applet **must** define a global table named `app`.
+-- Starboard reads functions from this table to understand your applet.
 app = {}
 
--- Unique applet identifier.
+-- app.id()
+-- This must return a unique ID string for your applet.
+-- Convention:
+--   "user.<your_name>" or "user.<your_tool_name>"
+-- This ID is also used to persist your applet's state.
 function app.id()
     return "user.lua_rsi"
 end
 
--- Display name shown in Starboard.
+-- app.name()
+-- This is the friendly display name shown inside Starboard.
 function app.name()
     return "Lua RSI Web"
 end
@@ -20,7 +26,7 @@ function app.uses_webview()
     return true
 end
 
--- Optional: a favicon URL for the applet list.
+-- Optional: Applets can have custom Icons, just set this link to a hosted image and It'll appear in the AppletList
 function app.favicon_url()
     return "https://cdn.robertsspaceindustries.com/static/images/RSI-logo-fb.jpg"
 end
@@ -38,5 +44,4 @@ end
 -- Runs on top of the WebView and can draw extra UI.
 -- Leave empty if you don’t need an overlay.
 function app.draw(dt, w, h)
-    -- ui.text("This draws over the webpage if you want!")
 end

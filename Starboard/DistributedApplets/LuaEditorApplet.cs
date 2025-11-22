@@ -3,8 +3,10 @@ using Overlay_Renderer.Methods;
 using System.Numerics;
 using MoonSharp.Interpreter;
 using Starboard.Lua;
-using Starboard.Guis;
+using Starboard.UI;
 using Windows.Networking.Sockets;
+using System.IO;
+using System.Reflection;
 
 namespace Starboard.DistributedApplets
 {
@@ -19,6 +21,9 @@ namespace Starboard.DistributedApplets
         private Vector2 _lastAvailableSize;
 
         private readonly TextEditor _editor = new();
+
+        private static string DefaultTemplate = String.Empty;
+        private static string WebTemplate = String.Empty;
 
         private sealed class EditorTab
         {
@@ -51,6 +56,11 @@ namespace Starboard.DistributedApplets
 
         private static EditorTab CreateDefaultTab()
         {
+            var asm = Assembly.GetExecutingAssembly();
+            using var stream = asm.GetManifestResourceStream("Starboard.ExampleApplets.ExampleLuaApplet.lua");
+            using var reader = new StreamReader(stream!);
+            DefaultTemplate = reader.ReadToEnd();
+
             var tab = new EditorTab();
             tab.Code = DefaultTemplate;
             tab.LastSavedCode = tab.Code;
@@ -64,6 +74,11 @@ namespace Starboard.DistributedApplets
 
         private static EditorTab CreateWebTab()
         {
+            var asm = Assembly.GetExecutingAssembly();
+            using var stream = asm.GetManifestResourceStream("Starboard.ExampleApplets.ExampleLuaWebApplet.lua");
+            using var reader = new StreamReader(stream!);
+            WebTemplate = reader.ReadToEnd();
+
             var tab = new EditorTab();
             tab.Code = WebTemplate;
             tab.LastSavedCode = tab.Code;
@@ -74,98 +89,6 @@ namespace Starboard.DistributedApplets
 
             return tab;
         }
-
-        // Current buffer in the editor
-        private const string DefaultTemplate = @"-- Every Lua applet **must** define a global table named `app`.
--- Starboard reads functions from this table to understand your applet.
-app = {}
-
--- app.id()
--- This must return a unique ID string for your applet.
--- Convention:
---   ""user.<your_name>"" or ""user.<your_tool_name>""
--- This ID is also used to persist your applet's state.
-function app.id()
-    return ""user.test_state""
-end
-
--- app.name()
--- This is the friendly display name shown inside Starboard.
-function app.name()
-    return ""Example Applet""
-end
-
--- app.init()
--- Optional.
--- Runs once when the applet loads (or reloads after you modify the file).
--- Great for setting default values the first time.
--- `state` is a persistent table: anything you put in here is
--- automatically saved & restored across sessions.
-function app.init()
-    state.counter = state.counter or 0
-    state.name = state.name or ""Unnamed""
-end
-
--- app.draw(dt, w, h)
--- Called every frame while the applet is selected.
---   dt = seconds since last frame
---   w, h = the size of your applet's panel (if needed)
---
--- Use ImGui via the `ui` table (ui.text, ui.button, ui.slider_float, etc.) 
-function app.draw(dt, w, h) 
-    ui.text(""Hello, "" .. (state.name or ""???""))
-    ui.text(""Counter: "" .. tostring(state.counter or 0))
-
-    -- ui.button returns true on click
-    if ui.button(""Increment"") then
-        state.counter = (state.counter or 0) + 1
-    end
-end
-";
-
-        private const string WebTemplate = @"-- Same as before: always define the `app` table.
-app = {}
-
--- Unique applet identifier.
-function app.id()
-    return ""user.lua_rsi""
-end
-
--- Display name shown in Starboard.
-function app.name()
-    return ""Lua RSI Web""
-end
-
--- Tell Starboard you want a web browser panel.
--- If this returns true, Starboard will:
---   • Reserve the right panel for a WebView
---   • Load your URL into it
---   • Handle navigation, cookies, isolation, etc.
-function app.uses_webview()
-    return true
-end
-
--- Optional: a favicon URL for the applet list.
-function app.favicon_url()
-    return ""https://cdn.robertsspaceindustries.com/static/images/RSI-logo-fb.jpg""
-end
-
--- app.url()
--- REQUIRED for web applets.
--- Must return a URL string every frame.
--- You can return different URLs depending on state if you want.
-function app.url()
-    return ""https://robertsspaceindustries.com""
-end
-
--- app.draw(dt, w, h)
--- Optional for web applets.
--- Runs on top of the WebView and can draw extra UI.
--- Leave empty if you don’t need an overlay.
-function app.draw(dt, w, h)
-    -- ui.text(""This draws over the webpage if you want!"")
-end
-";
 
         private int _pendingCloseTabIndex = -1;
         private int _pendingImmediateCloseIndex = -1;

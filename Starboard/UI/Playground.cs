@@ -4,7 +4,7 @@ using Overlay_Renderer.Methods;
 using System.Drawing;
 using System.Numerics;
 
-namespace Starboard.Guis
+namespace Starboard.UI
 {
     internal class Playground
     {

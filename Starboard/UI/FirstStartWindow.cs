@@ -4,7 +4,7 @@ using Starboard.GuiElements;
 using System.Numerics;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 
-namespace Starboard.Guis;
+namespace Starboard.UI;
 
 internal static class FirstStartWindow
 {

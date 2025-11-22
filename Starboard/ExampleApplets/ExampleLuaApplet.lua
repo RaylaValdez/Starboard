@@ -17,6 +17,11 @@ function app.name()
     return "State Demo"
 end
 
+-- Optional: Applets can have custom Icons, just set this link to a hosted image and It'll appear in the AppletList
+function app.favicon_url()
+    return "https://cdn.robertsspaceindustries.com/static/images/RSI-logo-fb.jpg"
+end
+
 -- app.init()
 -- Optional.
 -- Runs once when the applet loads (or reloads after you modify the file).
