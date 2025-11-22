@@ -16,6 +16,8 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 - DragNDrop importing of luaapplets!
 - Full Fledged lua editor applet for making applets live!
 
+![EditorDemo](https://github.com/RaylaValdez/Starboard/blob/main/Starboard/Assets/Gifs/EditorDemonstration.gif?raw=true)
+
 ---
 
 ## ❌ Known Issues
