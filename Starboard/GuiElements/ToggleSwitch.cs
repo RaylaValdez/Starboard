@@ -1,5 +1,5 @@
-﻿using System.Numerics;
-using ImGuiNET;
+﻿using ImGuiNET;
+using System.Numerics;
 
 namespace Starboard.GuiElements
 {
@@ -52,10 +52,10 @@ namespace Starboard.GuiElements
             t += (target - t) * MathF.Min(1f, speed * dt);
             _animT[thisId] = t;
 
-            Vector4 colOnBg = new(0.00f, 0.78f, 0.60f, 1.00f); 
-            Vector4 colOffBg = new(0.15f, 0.16f, 0.18f, 1.00f); 
-            Vector4 colBorder = new(0.90f, 0.90f, 0.95f, 1.00f); 
-            Vector4 colKnob = new(0.98f, 0.98f, 0.99f, 1.00f); 
+            Vector4 colOnBg = new(0.00f, 0.78f, 0.60f, 1.00f);
+            Vector4 colOffBg = new(0.15f, 0.16f, 0.18f, 1.00f);
+            Vector4 colBorder = new(0.90f, 0.90f, 0.95f, 1.00f);
+            Vector4 colKnob = new(0.98f, 0.98f, 0.99f, 1.00f);
 
             if (hovered)
             {
@@ -88,7 +88,7 @@ namespace Starboard.GuiElements
             float onAlpha = Math.Clamp((t - 0.4f) / 0.2f, 0f, 1f);
             float offAlpha = Math.Clamp((0.6f - t) / 0.2f, 0f, 1f);
 
-            Vector4 onTextCol = new(0.05f, 0.07f, 0.09f, onAlpha);  
+            Vector4 onTextCol = new(0.05f, 0.07f, 0.09f, onAlpha);
             Vector4 offTextCol = new(0.80f, 0.80f, 0.85f, offAlpha);
 
             if (!string.IsNullOrEmpty(onText))

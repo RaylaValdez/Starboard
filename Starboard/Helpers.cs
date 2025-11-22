@@ -4,10 +4,17 @@ using System.Numerics;
 
 namespace Starboard
 {
+    /// <summary>
+    /// Contains various Methods to make my life easier
+    /// </summary>
     public static class Helpers
     {
         private static bool _mobiglassOpen = false;
 
+        /// <summary>
+        /// Mediocre Mobiglass logic
+        /// </summary>
+        /// <returns>bool</returns>
         public static bool CheckMobiglassOpen()
         {
             var settings = StarboardSettingsStore.Current;
@@ -43,6 +50,9 @@ namespace Starboard
             return _mobiglassOpen;
         }
 
+        /// <summary>
+        /// Forces the flag for Starboard to be visible back to false
+        /// </summary>
         public static void ForceCloseMobiglass()
         {
             _mobiglassOpen = false;
@@ -107,6 +117,9 @@ namespace Starboard
         public static readonly Vector4 ProgressFillHover = new(0.10f, 0.90f, 0.75f, 1.00f);
     }
 
+    /// <summary>
+    /// The Theme of the entire Starboard application.
+    /// </summary>
     public static class StarboardStyle
     {
         /// <summary>

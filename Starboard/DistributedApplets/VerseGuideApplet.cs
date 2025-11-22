@@ -1,6 +1,6 @@
-﻿using System.Numerics;
-using ImGuiNET;
+﻿using ImGuiNET;
 using Overlay_Renderer.Methods;
+using System.Numerics;
 
 namespace Starboard.DistributedApplets
 {
@@ -12,6 +12,7 @@ namespace Starboard.DistributedApplets
 
         public string _url = "https://verseguide.com/";
         private string _status = "Idle";
+        public string Status => _status;
 
         public string? FaviconUrl => "https://verseguide.com/favicon-96x96.png";
 

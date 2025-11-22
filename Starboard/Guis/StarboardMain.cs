@@ -219,9 +219,9 @@ namespace Starboard.Guis
             Vector2 winSize = ImGui.GetWindowSize();
             var dl = ImGui.GetWindowDrawList();
 
-            float outerPadding = 10f * _dpiScale; 
-            float innerPadding = 8f * _dpiScale;  
-            float maxWidth = winSize.X * 0.7f;    
+            float outerPadding = 10f * _dpiScale;
+            float innerPadding = 8f * _dpiScale;
+            float maxWidth = winSize.X * 0.7f;
 
             Vector2 textSize = ImGui.CalcTextSize(message, false, maxWidth);
 
@@ -882,7 +882,7 @@ namespace Starboard.Guis
 
                 Vector4 bgVec;
                 Vector4 iconVec;
-                bool drawMinus = deleteHighlight; 
+                bool drawMinus = deleteHighlight;
 
                 if (deleteHighlight)
                 {
@@ -892,8 +892,8 @@ namespace Starboard.Guis
                 else
                 {
                     bgVec = addHovered
-                        ? new Vector4(0.2f, 0.5f, 1f, 0.25f)   
-                        : new Vector4(1f, 1f, 1f, 0.03f);      
+                        ? new Vector4(0.2f, 0.5f, 1f, 0.25f)
+                        : new Vector4(1f, 1f, 1f, 0.03f);
 
                     iconVec = addHovered
                         ? new Vector4(0.8f, 0.9f, 1f, 1f)

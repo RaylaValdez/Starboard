@@ -1,5 +1,4 @@
-﻿// FaviconManager.cs
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Threading.Tasks;

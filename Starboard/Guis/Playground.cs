@@ -24,12 +24,12 @@ namespace Starboard.Guis
         private enum Phase { FadeIn, Preload, FadeOut, Done }
         private static Phase _phase = Phase.FadeIn;
 
-        private static bool _isLoaded = false;        
-        private static bool _preloadActive = true;    
+        private static bool _isLoaded = false;
+        private static bool _preloadActive = true;
         private static float _preloadTime = 0f;
 
         private const float FadeInDuration = 0.25f;
-        private const float FadeOutDuration = 0.4f;  
+        private const float FadeOutDuration = 0.4f;
 
         private static float _fadeInTime = 0f;
         private static float _fadeOutTime = 0f;
@@ -40,7 +40,7 @@ namespace Starboard.Guis
         // --- StarboardMain fade knobs (hardcoded, tweak here) ---
         private const float MainFadeInSeconds = 0.1f;
         private const float MainFadeOutSeconds = 0.4f;
-        private static float _mainFadeT = 0f; 
+        private static float _mainFadeT = 0f;
 
         // --- StarboardMain visibility during loading phases ---
         private const bool ShowMainDuringFadeIn = false;
@@ -91,12 +91,12 @@ namespace Starboard.Guis
             {
                 StarboardMain.ResetOnMobiClosed();
             }
-          
+
             float globalAlpha = 1f;
-            bool overlayFromLoading = 
+            bool overlayFromLoading =
                 (_phase == Phase.FadeIn && ShowMainDuringFadeIn) ||
                 (_phase == Phase.Preload && ShowMainDuringPreload) ||
-                (_phase == Phase.FadeOut &&  ShowMainDuringFadeOut);
+                (_phase == Phase.FadeOut && ShowMainDuringFadeOut);
 
             switch (_phase)
             {

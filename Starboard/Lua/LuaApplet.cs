@@ -1,12 +1,9 @@
-﻿using System;
-using System.IO;
-using System.Numerics;
-using System.Collections.Generic;
-using ImGuiNET;
+﻿using ImGuiNET;
 using MoonSharp.Interpreter;
 using Overlay_Renderer.Helpers;
 using Overlay_Renderer.Methods;
 using Starboard.DistributedApplets;
+using System.Numerics;
 
 namespace Starboard.Lua
 {

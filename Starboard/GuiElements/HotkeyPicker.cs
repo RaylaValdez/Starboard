@@ -43,7 +43,7 @@ namespace Starboard.GuiElements
                 {
                     boundVk = vk;
                     boundKey = imguiKey;
-                    _activeId = 0;   
+                    _activeId = 0;
                     changed = true;
                 }
             }

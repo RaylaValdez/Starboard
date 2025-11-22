@@ -12,6 +12,7 @@ namespace Starboard.DistributedApplets
 
         public string _url = "https://www.erkul.games/live/calculator";
         private string _status = "Idle";
+        public string Status => _status;
 
         public string? FaviconUrl => "https://www.erkul.games/favicon.ico";
 

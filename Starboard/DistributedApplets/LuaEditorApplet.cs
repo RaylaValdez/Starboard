@@ -20,8 +20,6 @@ namespace Starboard.DistributedApplets
 
         private readonly TextEditor _editor = new();
 
-        private static ImFontPtr _orbiRegFont;
-
         private sealed class EditorTab
         {
             public readonly TextEditor Editor = new();
@@ -55,6 +53,19 @@ namespace Starboard.DistributedApplets
         {
             var tab = new EditorTab();
             tab.Code = DefaultTemplate;
+            tab.LastSavedCode = tab.Code;
+            tab.FilePath = string.Empty;
+            tab.FileName = "Untitled.lua";
+            tab.Status = "Ready.";
+            tab.Editor.Text = tab.Code;
+
+            return tab;
+        }
+
+        private static EditorTab CreateWebTab()
+        {
+            var tab = new EditorTab();
+            tab.Code = WebTemplate;
             tab.LastSavedCode = tab.Code;
             tab.FilePath = string.Empty;
             tab.FileName = "Untitled.lua";
@@ -112,6 +123,50 @@ function app.draw(dt, w, h)
 end
 ";
 
+        private const string WebTemplate = @"-- Same as before: always define the `app` table.
+app = {}
+
+-- Unique applet identifier.
+function app.id()
+    return ""user.lua_rsi""
+end
+
+-- Display name shown in Starboard.
+function app.name()
+    return ""Lua RSI Web""
+end
+
+-- Tell Starboard you want a web browser panel.
+-- If this returns true, Starboard will:
+--   • Reserve the right panel for a WebView
+--   • Load your URL into it
+--   • Handle navigation, cookies, isolation, etc.
+function app.uses_webview()
+    return true
+end
+
+-- Optional: a favicon URL for the applet list.
+function app.favicon_url()
+    return ""https://cdn.robertsspaceindustries.com/static/images/RSI-logo-fb.jpg""
+end
+
+-- app.url()
+-- REQUIRED for web applets.
+-- Must return a URL string every frame.
+-- You can return different URLs depending on state if you want.
+function app.url()
+    return ""https://robertsspaceindustries.com""
+end
+
+-- app.draw(dt, w, h)
+-- Optional for web applets.
+-- Runs on top of the WebView and can draw extra UI.
+-- Leave empty if you don’t need an overlay.
+function app.draw(dt, w, h)
+    -- ui.text(""This draws over the webpage if you want!"")
+end
+";
+
         private int _pendingCloseTabIndex = -1;
         private int _pendingImmediateCloseIndex = -1;
         private bool _popupOpenRequested = false;
@@ -162,6 +217,11 @@ end
                     NewFileTab();
                 }
 
+                if (io.KeyShift && ImGui.IsKeyPressed(ImGuiKey.N, false))
+                {
+                    NewFileTab();
+                }
+
                 if (ImGui.IsKeyPressed(ImGuiKey.W, false))
                 {
                     RequestCloseTab(_activeTabIndex);
@@ -171,6 +231,16 @@ end
                 {
                     SaveFile();
                 }
+
+                if (ImGui.IsKeyPressed(ImGuiKey.S, false) && io.KeyShift)
+                {
+                    SaveFileAs();
+                }
+
+                if (ImGui.IsKeyPressed(ImGuiKey.O, false))
+                {
+                    OpenFileIntoNewTab();
+                }
             }
 
             // --- Menu bar -----------------------------------------------------
@@ -178,26 +248,50 @@ end
             {
                 if (ImGui.BeginMenu("File"))
                 {
-                    if (ImGui.MenuItem("New"))
+                    bool hasTab = _tabs.Count > 0;
+
+                    if (ImGui.BeginMenu("New"))
                     {
-                        NewFileTab();
+                        if (ImGui.MenuItem("New Applet", shortcut: "CTRL + N", selected: false, enabled: hasTab))
+                        {
+                            NewFileTab();
+                        }
+
+                        if (ImGui.MenuItem("New Web Applet", shortcut: "CTRL + SHIFT + N", selected: false, enabled: hasTab))
+                        {
+                            NewFileTab(true);
+                        }
+
+                        ImGui.EndMenu();
                     }
 
-                    if (ImGui.MenuItem("Open"))
+
+
+                    if (ImGui.MenuItem("Open", shortcut: "CTRL + O", selected: false, enabled: hasTab))
                     {
                         OpenFileIntoNewTab();
                     }
 
-                    bool hasTab = _tabs.Count > 0;
 
-                    if (ImGui.MenuItem("Save", shortcut: null, selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Save", shortcut: "CTRL + S", selected: false, enabled: hasTab))
                     {
                         SaveFile();
                     }
 
-                    if (ImGui.MenuItem("Save As", shortcut: null, selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Save As", shortcut: "CTRL + SHIFT + S", selected: false, enabled: hasTab))
                     {
                         SaveFileAs();
+                    }
+
+                    ImGui.EndMenu();
+                }
+
+                if (ImGui.BeginMenu("Tools"))
+                {
+                    bool hasTab = _tabs.Count > 0;
+                    if (ImGui.MenuItem("Method List", shortcut: "CTRL + SPACE", selected: false, enabled: hasTab))
+                    {
+                        ActiveTab.Editor.OpenCompletion();
                     }
 
                     if (ImGui.MenuItem("Validate", shortcut: null, selected: false, enabled: hasTab))
@@ -210,7 +304,7 @@ end
 
                 string status = ActiveTab.Status;
 
-                if (ImGui.BeginMenu(status))
+                if (ImGui.BeginMenu(status, false))
                 {
                     ImGui.EndMenu();
                 }
@@ -262,7 +356,7 @@ end
                     // Persist updated state for next frame
                     t.IsOpen = open;
                 }
-                if (ImGui.TabItemButton("+",ImGuiTabItemFlags.Trailing))
+                if (ImGui.TabItemButton("+", ImGuiTabItemFlags.Trailing))
                 {
                     NewFileTab();
                 }
@@ -399,11 +493,20 @@ end
             }
         }
 
-        private void NewFileTab()
+        private void NewFileTab(bool webApplet = false)
         {
-            var tab = CreateDefaultTab();
-            _tabs.Add(tab);
-            _activeTabIndex = _tabs.Count - 1;
+            if (!webApplet)
+            {
+                var tab = CreateDefaultTab();
+                _tabs.Add(tab);
+                _activeTabIndex = _tabs.Count - 1;
+            }
+            else
+            {
+                var tab = CreateWebTab();
+                _tabs.Add(tab);
+                _activeTabIndex = _tabs.Count - 1;
+            }
         }
 
         private void OpenFileIntoNewTab()

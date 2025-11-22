@@ -1,7 +1,6 @@
 ﻿using ImGuiNET;
 using MoonSharp.Interpreter;
 using Overlay_Renderer.Methods;
-using System;
 using System.Numerics;
 
 namespace Starboard.Lua

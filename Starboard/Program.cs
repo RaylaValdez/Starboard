@@ -1,19 +1,19 @@
 ﻿using ImGuiNET;
-using Overlay_Renderer;
-using Overlay_Renderer.Helpers;
 using Overlay_Renderer.ImGuiRenderer;
 using Overlay_Renderer.Methods;
 using Starboard.Guis;
+using Svg;
 using System.Diagnostics;
 using System.Drawing;
+using System.Text;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 using System.Windows.Forms;
 using System.IO;
-using Svg;
-using System.Text;
+using Overlay_Renderer.Helpers;
+using Overlay_Renderer;
 
 
 namespace Starboard;
@@ -153,7 +153,7 @@ internal static class Program
                     try
                     {
                         var hash = System.Security.Cryptography.SHA1.HashData(bytes);
-                        var name = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                        var name = Convert.ToHexStringLower(hash);
 
                         var dir = Path.Combine(Path.GetTempPath(), "Starboard", "favicons");
                         Directory.CreateDirectory(dir);
@@ -304,7 +304,7 @@ internal static class Program
             FaviconManager.ProcessPendingUploads();
 
             d3dHost.BeginFrame();
-            imguiRenderer.NewFrame(overlay.ClientWidth, overlay.ClientHeight);
+            ImGuiRendererD3D11.NewFrame(overlay.ClientWidth, overlay.ClientHeight);
 
             ImGuiInput.UpdateMouse(overlay);
             ImGuiInput.UpdateKeyboard();
@@ -329,7 +329,7 @@ internal static class Program
 
             HitTestRegions.ApplyToOverlay(overlay);
 
-            imguiRenderer.Render(d3dHost.SwapChain);
+            imguiRenderer.Render(d3dHost.SwapChain!);
             d3dHost.Present();
 
             if (!WebBrowserManager.MouseOverWebRegion)
@@ -384,7 +384,7 @@ internal static class Program
             unsafe
             {
                 uint pid = 0;
-                PInvoke.GetWindowThreadProcessId(targetHwnd, &pid);
+                uint wtpID = PInvoke.GetWindowThreadProcessId(targetHwnd, &pid);
                 if (pid == 0) return;
 
                 var proc = Process.GetProcessById((int)pid);

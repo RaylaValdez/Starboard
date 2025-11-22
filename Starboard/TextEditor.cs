@@ -1,12 +1,9 @@
-﻿using System.Numerics;
-using System.Text;
-using System.IO;
-using System.Linq;
-using System.Xml.Linq;
-using ImGuiNET;
-using System.Reflection;
+﻿using ImGuiNET;
 using Starboard.Lua;
-using Starboard.DistributedApplets;
+using System.Numerics;
+using System.Reflection;
+using System.Text;
+using System.Xml.Linq;
 
 namespace Starboard
 {
@@ -650,8 +647,8 @@ namespace Starboard
                 var item = new CompletionItem
                 {
                     Name = $"ui.{name}",
-                    Signature = sig,     
-                    Summary = summary,   
+                    Signature = sig,
+                    Summary = summary,
                     InsertText = $"ui.{name}()"
                 };
 
@@ -1260,7 +1257,7 @@ namespace Starboard
                     CutSelectionToClipboard();
 
                 if (ImGui.IsKeyPressed(ImGuiKey.V, false))
-                    PasteFromClipboard();                   
+                    PasteFromClipboard();
 
             }
 
@@ -2408,7 +2405,13 @@ namespace Starboard
             EnsureCursorInBounds();
         }
 
-
+        public void OpenCompletion(string? seedFilter = null)
+        {
+            EnsureCompletionItems();
+            _completionOpen = true;
+            _completionFilter = seedFilter ?? "";
+            ApplyCompletionFilter();
+        }
 
         private void DrawSearchUI()
         {
@@ -2455,7 +2458,7 @@ namespace Starboard
                 replaceLabel = "Replace";
             }
 
-                ImGui.SameLine();
+            ImGui.SameLine();
             if (ImGui.Button("X"))
             {
                 _searchOpen = false;

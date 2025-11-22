@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.Json;
+﻿using ImGuiNET;
 using Overlay_Renderer.Helpers;
-using ImGuiNET;
+using System.Text.Json;
 using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 namespace Starboard
@@ -81,9 +76,11 @@ namespace Starboard
             {
                 Directory.CreateDirectory(_baseDir);
 
+                JsonSerializerOptions jsonSerializerOptions = new() { WriteIndented = true };
+                JsonSerializerOptions options = jsonSerializerOptions;
                 var json = JsonSerializer.Serialize(
                     Current,
-                    new JsonSerializerOptions { WriteIndented = true });
+                    options);
 
                 File.WriteAllText(_settingsPath, json);
             }

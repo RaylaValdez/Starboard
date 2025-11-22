@@ -12,9 +12,9 @@ namespace Starboard.DistributedApplets
         string Id { get; }
 
         /// <summary>Name shown in the left applet list.</summary>
-        string DisplayName { get; }
+        string? DisplayName { get; }
 
-        string FaviconUrl { get; }
+        string? FaviconUrl { get; }
 
         bool UsesWebView { get; }
 
