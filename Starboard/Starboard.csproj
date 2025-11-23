@@ -30,6 +30,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -64,6 +65,7 @@
       <PackagePath>\</PackagePath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="$(DocumentationFile)" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always"/>
   </ItemGroup>
 
   <!-- Copy all assets by default -->

@@ -14,16 +14,22 @@ namespace Starboard.DistributedApplets
     {
         public string Id => "starboard.lua_editor";
         public string DisplayName => "Applet Editor";
+        public string? FaviconUrl => "https://cdn-icons-png.flaticon.com/512/5105/5105701.png";
+
         public bool UsesWebView => false;
 
-        public string? FaviconUrl => "https://cdn-icons-png.flaticon.com/512/5105/5105701.png";
+        private static string DefaultTemplate = String.Empty;
+        private static string WebTemplate = String.Empty;
+
+        private int _activeTabIndex = 0;
+        private int _pendingCloseTabIndex = -1;
+        private int _pendingImmediateCloseIndex = -1;
+
+        private bool _popupOpenRequested = false;
 
         private Vector2 _lastAvailableSize;
 
         private readonly TextEditor _editor = new();
-
-        private static string DefaultTemplate = String.Empty;
-        private static string WebTemplate = String.Empty;
 
         private sealed class EditorTab
         {
@@ -41,7 +47,6 @@ namespace Starboard.DistributedApplets
         }
 
         private readonly List<EditorTab> _tabs = new();
-        private int _activeTabIndex = 0;
 
         private EditorTab ActiveTab
         {
@@ -90,10 +95,6 @@ namespace Starboard.DistributedApplets
             return tab;
         }
 
-        private int _pendingCloseTabIndex = -1;
-        private int _pendingImmediateCloseIndex = -1;
-        private bool _popupOpenRequested = false;
-
         private static string GetExternDir()
         {
             var dir = Path.Combine(
@@ -104,8 +105,6 @@ namespace Starboard.DistributedApplets
             Directory.CreateDirectory(dir);
             return dir;
         }
-
-        // ---------------------------------------------------------------------
 
         public void Initialize()
         {
@@ -124,7 +123,6 @@ namespace Starboard.DistributedApplets
             var io = ImGui.GetIO();
             var tab = ActiveTab;
 
-            // Handle any clean-tab close requested last frame
             if (_pendingImmediateCloseIndex >= 0)
             {
                 CloseTab(_pendingImmediateCloseIndex);
@@ -166,7 +164,6 @@ namespace Starboard.DistributedApplets
                 }
             }
 
-            // --- Menu bar -----------------------------------------------------
             if (ImGui.BeginMenuBar())
             {
                 if (ImGui.BeginMenu("File"))
@@ -175,12 +172,12 @@ namespace Starboard.DistributedApplets
 
                     if (ImGui.BeginMenu("New"))
                     {
-                        if (ImGui.MenuItem("New Applet", shortcut: "CTRL + N", selected: false, enabled: hasTab))
+                        if (ImGui.MenuItem("New Applet", "Ctrl+N", false, hasTab))
                         {
                             NewFileTab();
                         }
 
-                        if (ImGui.MenuItem("New Web Applet", shortcut: "CTRL + SHIFT + N", selected: false, enabled: hasTab))
+                        if (ImGui.MenuItem("New Web Applet", "Ctrl+Shift+N", false, hasTab))
                         {
                             NewFileTab(true);
                         }
@@ -190,18 +187,18 @@ namespace Starboard.DistributedApplets
 
 
 
-                    if (ImGui.MenuItem("Open", shortcut: "CTRL + O", selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Open", "Ctrl+O", false, hasTab))
                     {
                         OpenFileIntoNewTab();
                     }
 
 
-                    if (ImGui.MenuItem("Save", shortcut: "CTRL + S", selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Save", "Ctrl+S", false, hasTab))
                     {
                         SaveFile();
                     }
 
-                    if (ImGui.MenuItem("Save As", shortcut: "CTRL + SHIFT + S", selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Save As", "Ctrl+Shift+S", false, hasTab))
                     {
                         SaveFileAs();
                     }
@@ -212,12 +209,12 @@ namespace Starboard.DistributedApplets
                 if (ImGui.BeginMenu("Tools"))
                 {
                     bool hasTab = _tabs.Count > 0;
-                    if (ImGui.MenuItem("Method List", shortcut: "CTRL + SPACE", selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Method List", "Ctrl+Space", false, hasTab))
                     {
                         ActiveTab.Editor.OpenCompletion();
                     }
 
-                    if (ImGui.MenuItem("Validate", shortcut: null, selected: false, enabled: hasTab))
+                    if (ImGui.MenuItem("Validate", null, false, hasTab))
                     {
                         ValidateCurrentCode();
                     }
@@ -235,7 +232,6 @@ namespace Starboard.DistributedApplets
                 ImGui.EndMenuBar();
             }
 
-            // --- Editor tabs --------------------------------------------------
             if (ImGui.BeginTabBar("EditorTabs",
                 ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.AutoSelectNewTabs))
             {
@@ -246,10 +242,8 @@ namespace Starboard.DistributedApplets
                     string visibleTitle = $"{t.FileName}{(t.IsDirty ? "*" : string.Empty)}";
                     string tabTitle = $"{visibleTitle}##tab_{i}";
 
-                    // Per-tab open flag for ImGui
                     bool open = t.IsOpen;
 
-                    // BeginTabItem will flip 'open' to false when the user clicks X or MMB
                     if (ImGui.BeginTabItem(tabTitle, ref open))
                     {
                         _activeTabIndex = i;
@@ -261,22 +255,18 @@ namespace Starboard.DistributedApplets
                         ImGui.EndTabItem();
                     }
 
-                    // Detect a close request this frame (X or middle-click):
                     if (t.IsOpen && !open)
                     {
                         bool wasDirty = t.IsDirty;
 
-                        // Route through our unified close logic
                         RequestCloseTab(i);
 
-                        // If it was dirty, keep it open until the user answers the popup
                         if (wasDirty)
                         {
                             open = true;
                         }
                     }
 
-                    // Persist updated state for next frame
                     t.IsOpen = open;
                 }
                 if (ImGui.TabItemButton("+", ImGuiTabItemFlags.Trailing))
@@ -295,11 +285,10 @@ namespace Starboard.DistributedApplets
 
 
 
-            // Unsaved-changes modal
             if (_pendingCloseTabIndex >= 0)
             {
                 ImGui.SetNextWindowSize(new Vector2(420, 0), ImGuiCond.FirstUseEver);
-                bool dummyOpen = true; // ImGui needs a ref bool, we manage close ourselves
+                bool dummyOpen = true;
 
                 Vector2 winPos = ImGui.GetWindowPos();
                 Vector2 winSize = ImGui.GetWindowSize();
@@ -375,10 +364,6 @@ namespace Starboard.DistributedApplets
             HitTestRegions.AddCurrentWindow();
         }
 
-        // ---------------------------------------------------------------------
-        // File ops
-        // ---------------------------------------------------------------------
-
         private void RequestCloseTab(int index)
         {
             if (index < 0 || index >= _tabs.Count)
@@ -386,18 +371,15 @@ namespace Starboard.DistributedApplets
 
             var tab = _tabs[index];
 
-            // Clean tab: close silently, but do it *outside* the tab-bar loop.
             if (!tab.IsDirty)
             {
                 _pendingImmediateCloseIndex = index;
                 return;
             }
 
-            // Dirty -> ask the user via modal popup
             _pendingCloseTabIndex = index;
             _popupOpenRequested = true;
         }
-
 
         private void CloseTab(int index)
         {
@@ -473,7 +455,6 @@ namespace Starboard.DistributedApplets
 
             var tab = _tabs[index];
 
-            // No path yet? Behave like Save As
             if (string.IsNullOrWhiteSpace(tab.FilePath))
                 return SaveTabAs(index);
 
@@ -483,10 +464,9 @@ namespace Starboard.DistributedApplets
 
                 File.WriteAllText(tab.FilePath, text);
                 tab.LastSavedCode = text;
-                tab.Code = text; // optional, if you still want to keep Code in sync
+                tab.Code = text;
                 tab.Status = $"Saved '{tab.FileName}'.";
 
-                // Keep ExternApplets in sync
                 string externDir = GetExternDir();
                 string scriptPath = Path.Combine(externDir, tab.FileName);
                 File.WriteAllText(scriptPath, text);
@@ -500,7 +480,6 @@ namespace Starboard.DistributedApplets
                 return false;
             }
         }
-
 
         private bool SaveTabAs(int index)
         {
@@ -551,8 +530,6 @@ namespace Starboard.DistributedApplets
             }
         }
 
-
-
         private void SaveFile()
         {
             SaveTab(_activeTabIndex);
@@ -562,10 +539,6 @@ namespace Starboard.DistributedApplets
         {
             SaveTabAs(_activeTabIndex);
         }
-
-        // ---------------------------------------------------------------------
-        // Validation / "Run" check (no drawing)
-        // ---------------------------------------------------------------------
 
         private void ValidateCurrentCode()
         {
@@ -608,7 +581,6 @@ namespace Starboard.DistributedApplets
                 tab.Status = $"Validation error: {ex.Message}";
             }
         }
-
 
         private static string? CallStringFunc(Script script, Table appTable, string funcName)
         {

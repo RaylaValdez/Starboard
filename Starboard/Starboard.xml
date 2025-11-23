@@ -1,0 +1,410 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Starboard</name>
+    </assembly>
+    <members>
+        <member name="T:Starboard.FaviconManager">
+            <summary>
+            Downloads favicons in the background, then asks the render thread
+            to create textures via TextureUploader. Call ProcessPendingUploads()
+            once per frame (main/render thread).
+            </summary>
+        </member>
+        <member name="M:Starboard.FaviconManager.GetOrRequest(System.String,System.String)">
+            <summary>Get a cached texture or IntPtr.Zero if not ready. Starts download once.</summary>
+        </member>
+        <member name="M:Starboard.FaviconManager.ProcessPendingUploads">
+            <summary>Call from the render thread once per frame.</summary>
+        </member>
+        <member name="T:Starboard.DistributedApplets.IStarboardApplet">
+            <summary>
+            Contract for a Starboard applet.
+            Each applet should live in its own .cs file and implement this.
+            </summary>
+        </member>
+        <member name="P:Starboard.DistributedApplets.IStarboardApplet.Id">
+            <summary>A stable ID (e.g. "com.yourname.cargo_planner").</summary>
+        </member>
+        <member name="P:Starboard.DistributedApplets.IStarboardApplet.DisplayName">
+            <summary>Name shown in the left applet list.</summary>
+        </member>
+        <member name="M:Starboard.DistributedApplets.IStarboardApplet.Initialize">
+            <summary>Called once when app is starting / applets are registered.</summary>
+        </member>
+        <member name="M:Starboard.DistributedApplets.IStarboardApplet.Draw(System.Single,System.Numerics.Vector2)">
+            <summary>
+            Draw the applet inside the right-hand panel.
+            availableSize is the inner size of that panel.
+            </summary>
+        </member>
+        <member name="M:Starboard.GuiElements.ToggleSwitch.Draw(System.String,System.Numerics.Vector2,System.Boolean@,System.String,System.String)">
+            <summary>
+            Draws an animated toggle switch.
+            </summary>
+            <param name="id">Unique ID per control (per window).</param>
+            <param name="size">Track size (width, height) in pixels.</param>
+            <param name="value">Bool being toggled.</param>
+            <param name="onText">Text to show for ON.</param>
+            <param name="offText">Text to show for OFF.</param>
+            <returns>True if value changed this frame.</returns>
+        </member>
+        <member name="T:Starboard.Helpers">
+            <summary>
+            Contains various Methods to make my life easier
+            </summary>
+        </member>
+        <member name="M:Starboard.Helpers.CheckMobiglassOpen">
+            <summary>
+            Mediocre Mobiglass logic
+            </summary>
+            <returns>bool</returns>
+        </member>
+        <member name="M:Starboard.Helpers.ForceCloseMobiglass">
+            <summary>
+            Forces the flag for Starboard to be visible back to false
+            </summary>
+        </member>
+        <member name="T:Starboard.StarboardStyle">
+            <summary>
+            The Theme of the entire Starboard application.
+            </summary>
+        </member>
+        <member name="M:Starboard.StarboardStyle.ApplyStarboardStyle">
+            <summary>
+            Apply the unified Starboard / Star Citizen-ish ImGui style.
+            This replaces the old ImGuiStylePresets.ApplyDark().
+            </summary>
+        </member>
+        <member name="T:Starboard.Lua.LuaApplet">
+            <summary>
+            Wraps a Lua script in an IStarboardApplet so it can appear in the applet list.
+            
+            Expected lua shape:
+            
+            app = {}
+            
+            fucntion app.id() return "user.my_applet" end
+            function app.name() return "My Lua Applet" end
+            function app.uses_webview() return false end
+            function app.favicon_url return nil end
+            
+            -- For web applets (uses_webview() == true):
+            function app.url() return "https://example.com" end
+            
+            function app.Init() end
+            function app.Draw(dt, w, h) end
+            </summary>
+        </member>
+        <member name="T:Starboard.Lua.LuaUiApi">
+            <summary> UI API exposed to Lua scripts as `ui`.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.add_hitregions">
+            <summary>ui.add_hitregions() – Add the current ImGui window’s hit regions for this applet.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.accept_dragdrop_payload(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.accept_dragdrop_payload(context, args) - Accepts an active drag-and-drop payload for the given type and returns its data, size, and delivery status to Lua.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.align_text_to_frame_padding">
+            <summary>ui.align_text_to_frame_padding() – Align text baseline to match frame padding (use before text next to widgets).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.arrow_button(System.String,System.String)">
+            <summary>ui.arrow_button(id, direction) – Draw an arrow button pointing in a given direction; returns true when clicked.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_child(System.String,System.Double,System.Double,System.Boolean)">
+            <summary>ui.begin_child(id, width, height, border) – Begin a child region with size and optional border; returns true if visible.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_combo(System.String,System.String)">
+            <summary>ui.begin_combo(label, preview_value) – Begin a combo box; returns true if it’s open (must be followed by ui.end_combo()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_disabled(System.Boolean)">
+            <summary>ui.begin_disabled(disabled) – Begin a disabled block where widgets are greyed and non-interactive.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_drag_drop_source(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_drag_drop_source(flags?) – Begin a drag-drop source; returns true while active (must be followed by ui.end_drag_drop_source()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_drag_drop_target">
+            <summary>ui.begin_drag_drop_target() – Begin a drag-drop target region; returns true if a payload can be accepted (must be followed by ui.end_drag_drop_target()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_group">
+            <summary>ui.begin_group() – Begin a group so widgets are visually and logically grouped.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_item_tooltip">
+            <summary>ui.begin_item_tooltip() – Begin a tooltip for the last item; returns true if drawing the tooltip (must be followed by ui.end_tooltip()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_list_box(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_list_box(label, width?, height?) – Begin a scrollable list box; returns true while active (must be followed by ui.end_list_box()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_main_menu_bar">
+            <summary>ui.begin_main_menu_bar() – Begin the main menu bar at the top of the window; returns true while active (must be followed by ui.end_main_menu_bar()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_menu(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_menu(label, enabled?) – Begin a menu or submenu; returns true while open (must be followed by ui.end_menu()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_menu_bar">
+            <summary>ui.begin_menu_bar() – Begin a menu bar inside the current window; returns true while active (must be followed by ui.end_menu_bar()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_multi_select(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_multi_select(flags?, selection_count, items_count) – Begin a multi-selection block; returns a table with IO + requests. Must pair with ui.end_multi_select().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_popup(System.String)">
+            <summary>ui.begin_popup(id) – Begin a popup; returns true while open (must be ended with ui.end_popup()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_popup_context_item(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_popup_context_item(id?, popup_flags?) – Begin a right-click context popup for the last item; returns true while open (must be followed by ui.end_popup()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_popup_context_void(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_popup_context_void(id?, popup_flags?) – Begin a right-click context popup when clicking on empty space; returns true while open (must be followed by ui.end_popup()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_popup_context_window(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_popup_context_window(id?, popup_flags?) – Begin a right-click context popup for the current window; returns true while open (must be followed by ui.end_popup()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_popup_modal(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_popup_modal(name, open?, flags?) – Begin a modal popup; returns true while open (must be followed by ui.end_popup()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_tab_bar(System.String)">
+            <summary>ui.begin_tab_bar(id) – Begin a tab bar; returns true while visible.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_tab_item(System.String)">
+            <summary>ui.begin_tab_item(label) – Begin a tab item; returns true if its contents should be drawn.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_table(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.begin_table(id, columns, flags?, outer_width?, inner_width?) – Begin a table; returns true while active (must be followed by ui.end_table()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_tooltip">
+            <summary>ui.begin_tooltip() – Begin a tooltip window; returns true while active (must be followed by ui.end_tooltip()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.begin_window(System.String)">
+            <summary>ui.begin_window(title) – Begin a window; returns true if the window is visible (not collapsed).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.bullet">
+            <summary>ui.bullet() – Draw a bullet on the current line without text.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.bullet_text(System.String)">
+            <summary>ui.bullet_text(str) – Draw a bullet followed by text (useful for lists).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.button(System.String)">
+            <summary>ui.button(label) – Draw a standard button; returns true when pressed.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.calc_item_width">
+            <summary>ui.calc_item_width() – Return the width of the last item.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.calc_text_size(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.calc_text_size(text) – Return the size of the given text.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.checkbox(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.checkbox(label, value_bool) -> { changed, value } – Checkbox that returns a table with fields `changed` and `value`.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.checkbox_flags(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.checkbox_flags(label, flags, flag_value) -> { changed, flags } – Checkbox for a bit flag; returns updated flags and change state.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.close_current_popup">
+            <summary>ui.close_current_popup() – Close the currently open popup.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.collapsing_header(System.String)">
+            <summary>ui.collapsing_header(label) – Collapsible header; returns true while the section is open.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_button(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_button(id, r, g, b, a, flags?, size_x?, size_y?) – Display a color button; returns true when clicked.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_convert_float4_to_u32(System.Double,System.Double,System.Double,System.Double)">
+            <summary>ui.color_convert_float4_to_u32(r, g, b, a) – Convert RGBA floats to packed U32 color.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_convert_hsv_to_rgb(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_convert_hsv_to_rgb(h, s, v) -> { r, g, b } – Convert HSV to RGB floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_convert_rgb_to_hsv(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_convert_rgb_to_hsv(r, g, b) -> { h, s, v } – Convert RGB to HSV floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_convert_u32_to_float4(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_convert_u32_to_float4(color_u32) -> { r, g, b, a } – Convert packed U32 color to RGBA floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_edit3(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_edit3(label, r, g, b, flags?) -> { changed, r, g, b } – Color edit widget for RGB floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_edit4(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_edit4(label, r, g, b, a, flags?) -> { changed, r, g, b, a } – Color edit widget for RGBA floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_picker3(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_picker3(label, r, g, b, flags?) -> { changed, r, g, b } – Color picker widget for RGB floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.color_picker4(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.color_picker4(label, r, g, b, a, flags?) -> { changed, r, g, b, a } – Color picker widget for RGBA floats.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.columns(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.columns(count?, id?, border?) – Switch to columns layout (deprecated API).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.combo(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.combo(label, current_index, items_table) -> { changed, index } – Combo box from a Lua string array, returning selected index.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.create_context">
+            <summary>ui.create_context() – Create an ImGui context and return its pointer as number.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.debug_check_version_and_data_layout">
+            <summary>ui.debug_check_version_and_data_layout() – Run Dear ImGui internal version/layout check (if available in your build).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.debug_flash_style_color(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.debug_flash_style_color(idx, duration?) – Flash a style color for debugging.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.debug_log(System.String)">
+            <summary>ui.debug_log(text) – Append text to Dear ImGui debug log.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.debug_start_item_picker">
+            <summary>ui.debug_start_item_picker() – Start the item picker (press key to select an item).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.debug_text_encoding(System.String)">
+            <summary>ui.debug_text_encoding(text) – Debug print string encoding diagnostics.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.destroy_context(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.destroy_context(ctx_ptr?) – Destroy the current or specified ImGui context.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.destroy_platform_windows">
+            <summary>ui.destroy_platform_windows() – Destroy platform windows (multi-viewport).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.dock_space(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.dock_space(id, w?, h?, flags?) – Create a dockspace node and return its id.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.dock_space_over_viewport(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments,System.UInt32)">
+            <summary>ui.dock_space_over_viewport(flags?) – Create a dockspace over the main viewport and return its id.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_float(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_float(label, value, speed, min, max, format?) -> { changed, value } – Drag float widget with optional limits and format.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_float2(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_float2(label, x, y, speed?, min?, max?, format?) -> { changed, x, y }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_float3(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_float3(label, x, y, z, speed?, min?, max?, format?) -> { changed, x, y, z }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_float4(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_float4(label, x, y, z, w, speed?, min?, max?, format?) -> { changed, x, y, z, w }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_float_range2(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_float_range2(label, v_min, v_max, speed?, min?, max?, fmt_min?, fmt_max?, flags?) -> { changed, v_min, v_max }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_int(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_int(label, value, speed, min, max) -> { changed, value } – Drag integer widget with optional limits.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_int_range2(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_int_range2(label, v_min, v_max, speed?, min?, max?, fmt_min?, fmt_max?) -> { changed, v_min, v_max }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_scalar_n_s32(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_scalar_n_s32(label, values_table, speed?, min?, max?, format?, flags?) -> { changed, values }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.drag_scalar_s32(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.drag_scalar_s32(label, value, speed?, min?, max?, format?, flags?) -> { changed, value }.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.dummy(System.Double,System.Double)">
+            <summary>ui.dummy(w, h) – Add an invisible spacer of given size.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_child">
+            <summary>ui.end_child() – End the current child region started by ui.begin_child().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_disabled">
+            <summary>ui.end_disabled() – End a disabled block started with ui.begin_disabled().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_group">
+            <summary>ui.end_group() – End the current group started by ui.begin_group().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_multi_select(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.end_multi_select() – End a multi-selection block; returns a table of final requests (same shape as begin).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_popup">
+            <summary>ui.end_popup() – End the current popup.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_tab_bar">
+            <summary>ui.end_tab_bar() – End the current tab bar.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_tab_item">
+            <summary>ui.end_tab_item() – End the current tab item.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.end_window">
+            <summary>ui.end_window() – End the current window started by ui.begin_window().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.help_marker(System.String)">
+            <summary>ui.help_marker(text) – Draw a small "(?)" that shows a wrapped tooltip when hovered.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.image(System.Double,System.Double,System.Double)">
+            <summary>ui.image(texture_id, width, height) – Draw an image using a host-provided texture id.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.indent(System.Double)">
+            <summary>ui.indent(amount) – Indent subsequent items to the right by `amount` pixels.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.input_text(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.input_text(label, text, max_length) -> { changed, value } – Text input with max length, returning new value and changed flag.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.new_line">
+            <summary>ui.new_line() – Force a new line (similar to pressing Enter).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.open_popup(System.String)">
+            <summary>ui.open_popup(id) – Request opening a popup with the given id.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.pop_style_color(System.Int32)">
+            <summary>ui.pop_style_color(count) – Pop one or more style colors from the stack.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.progress_bar(System.Double,System.Double,System.Double,System.String)">
+            <summary>ui.progress_bar(fraction, width, height, overlay_text?) – Draw a progress bar with value in [0,1].</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.push_style_color(System.Int32,System.Double,System.Double,System.Double,System.Double)">
+            <summary>ui.push_style_color(idx, r, g, b, a) – Push a style color (ImGuiCol) onto the stack.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.radio_button(System.String,System.Boolean)">
+            <summary>ui.radio_button(label, active) -> bool – Radio-style toggle; returns true when clicked.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.radio_button_value(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.radio_button_value(label, current, this_value) -> { changed, value } – Radio group helper returning new value and changed flag.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.same_line">
+            <summary>ui.same_line() – Place the next item on the same line.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.selectable(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.selectable(label, selected) -> { clicked, selected } – Selectable item that returns click state and resulting selection.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.separator">
+            <summary>ui.separator() – Draw a horizontal separator line.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.set_cursor_pos(System.Double,System.Double)">
+            <summary>ui.set_cursor_pos(x, y) – Move the cursor within the current window (top-left is 0,0).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.set_next_window_pos(System.Double,System.Double)">
+            <summary>ui.set_next_window_pos(x, y) – Set the position for the next window created by ui.begin_window().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.set_next_window_size(System.Double,System.Double)">
+            <summary>ui.set_next_window_size(w, h) – Set the size for the next window created by ui.begin_window().</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.slider_float(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.slider_float(label, value, min, max, format?) -> { changed, value } – Float slider returning new value and changed flag.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.slider_int(MoonSharp.Interpreter.ScriptExecutionContext,MoonSharp.Interpreter.CallbackArguments)">
+            <summary>ui.slider_int(label, value, min, max) -> { changed, value } – Integer slider returning new value and changed flag.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.small_button(System.String)">
+            <summary>ui.small_button(label) – Draw a smaller button; returns true when pressed.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.spacing">
+            <summary>ui.spacing() – Add a vertical gap (empty space) between items.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.text(System.String)">
+            <summary>ui.text(str) – Draw a single line of text without wrapping.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.text_wrapped(System.String)">
+            <summary>ui.text_wrapped(str) – Draw text that automatically wraps at the window edge.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.tree_node(System.String)">
+            <summary>ui.tree_node(label) – Tree node; returns true if open (then call ui.tree_pop()).</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.tree_pop">
+            <summary>ui.tree_pop() – Close the most recent open tree node.</summary>
+        </member>
+        <member name="M:Starboard.Lua.LuaUiApi.unindent(System.Double)">
+            <summary>ui.unindent(amount) – Remove indentation to the left by `amount` pixels.</summary>
+        </member>
+        <member name="M:Starboard.UI.StarboardMain.RegisterOrUpdateLuaApplet(System.String,System.Boolean)">
+            <summary>
+            Create (or replace) a LuaApplet from the given scriptPath,
+            add it to the applet list, re-sort, save order, and optionally select it.
+            Call this after saving a .lua file from the editor.
+            </summary>
+        </member>
+    </members>
+</doc>

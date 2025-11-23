@@ -9,151 +9,53 @@ namespace Starboard.UI
 {
     internal sealed class TextEditor
     {
-        // ---- Public API -----------------------------------------------------
-
         public string Text
         {
             get => GetText();
             set => SetText(value ?? string.Empty);
         }
-
-        /// <summary>Render the editor inside the current ImGui window.</summary>
-        public void Render(string id, Vector2 size)
-        {
-            unsafe
-            {
-                if (Program._jBMReg.NativePtr != null)
-                    ImGui.PushFont(Program._jBMReg.NativePtr);
-            }
-
-            // VSCode-like editor background (#1E1E1E)
-            ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0.117f, 0.117f, 0.117f, 1.0f));
-
-            if (!ImGui.BeginChild(id, size, ImGuiChildFlags.Borders, ImGuiWindowFlags.HorizontalScrollbar))
-            {
-                ImGui.PopStyleColor();
-                unsafe
-                {
-                    if (Program._jBMReg.NativePtr != null)
-                        ImGui.PopFont();
-                }
-                return;
-            }
-
-            var io = ImGui.GetIO();
-            bool focused = ImGui.IsWindowFocused();
-            _hasFocus = focused;
-
-            if (focused)
-                HandleKeyboard(io);
-
-            if (_searchOpen)
-            {
-                float barWidth = 360f;
-                float barHeight = 100f;
-
-                // Top-left of the editor’s content region
-                Vector2 childPos = ImGui.GetCursorScreenPos();
-                Vector2 childSize = ImGui.GetContentRegionAvail();
-
-                Vector2 posTopRight = new Vector2(
-                    childPos.X + childSize.X - barWidth - 6f,
-                    childPos.Y + 6f
-                );
-
-                // Draw a floating child *inside* the editor window
-                Vector2 oldCursor = ImGui.GetCursorScreenPos();
-                ImGui.SetCursorScreenPos(posTopRight);
-
-                ImGui.BeginChild("##SearchReplace",
-                    new Vector2(barWidth, barHeight),
-                    ImGuiChildFlags.Borders,
-                    ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings);
-
-                DrawSearchUI();
-                ImGui.EndChild();
-
-                // Restore cursor so DrawContents still uses the correct origin
-                ImGui.SetCursorScreenPos(oldCursor);
-            }
-
-            DrawContents();
-
-            ImGui.EndChild();
-            ImGui.PopStyleColor();
-
-            unsafe
-            {
-                if (Program._jBMReg.NativePtr != null)
-                    ImGui.PopFont();
-            }
-        }
-
-        // ---- Internal data --------------------------------------------------
-
-        private readonly List<string> _lines = new() { string.Empty };
+        private string _inlineSuggestion = string.Empty;
+        private string _completionFilter = "";
+        private string _findText = "";
+        private string _replaceText = "";
+        private string replaceLabel = "Replace";
 
         private int _cursorLine;
         private int _cursorColumn;
-
-        // Focus
-        private bool _hasFocus;
-
-        // Mouse selection state
-        private bool _isSelecting;
         private int _selStartLine = -1;
         private int _selStartColumn = -1;
         private int _selEndLine = -1;
         private int _selEndColumn = -1;
+        private int _completionSelectedIndex = 0;
+        private int _inlineSuggestionLine = -1;
+        private int _inlineSuggestionColumn = -1;
+        private int _searchResultLine = -1;
+        private int _searchResultCol = -1;
 
+        private const int TabSize = 4;
+
+        private bool _hasFocus;
+        private bool _isSelecting;
         private bool HasSelection =>
             _selStartLine >= 0 &&
             (_selStartLine != _selEndLine || _selStartColumn != _selEndColumn);
+        private bool _suppressUndoCapture;
+        private bool _completionInitialized = false;
+        private bool _completionOpen = false;
+        private bool _searchOpen = false;
+        private bool _caseSensitive = false;
+        private bool _wholeWord = false;
 
-        // How far the visible Star Citizen cursor tip is from the actual ImGui mouse point
-        // Tweak these values until clicking feels right
-        private readonly Vector2 _mouseHitOffset = new Vector2(-8f, 0f);
+        private float _lineHeight;
+        private float _charAdvance;
 
-        private enum TokenType
-        {
-            Default,
-            Keyword,
-            Builtin,
-            Method,
-            Number,
-            String,
-            Comment,
-            Identifier,
-            Operator,
-            Field
-        }
-
-        private struct Token
-        {
-            public int Line;
-            public int Start;
-            public int Length;
-            public TokenType Type;
-        }
-
-        // Full editor snapshot for undo/redo
-        private struct EditorState
-        {
-            public List<string> Lines;
-            public int CursorLine;
-            public int CursorColumn;
-            public int SelStartLine;
-            public int SelStartColumn;
-            public int SelEndLine;
-            public int SelEndColumn;
-        }
-
+        private readonly List<CompletionItem> _completionItems = new();
+        private readonly List<CompletionItem> _completionFiltered = new();
+        private readonly List<string> _lines = new() { string.Empty };
         private readonly List<Token> _tokens = new();
 
-        // Undo / redo stacks
         private readonly Stack<EditorState> _undoStack = new();
         private readonly Stack<EditorState> _redoStack = new();
-        private bool _suppressUndoCapture;
 
         private static readonly HashSet<string> LuaKeywords = new(StringComparer.Ordinal)
         {
@@ -180,6 +82,137 @@ namespace Starboard.UI
 
         private static readonly HashSet<string> LuaUiMethods = BuildLuaUiMethods();
 
+        private struct Token
+        {
+            public int Line;
+            public int Start;
+            public int Length;
+            public TokenType Type;
+        }
+
+        private enum TokenType
+        {
+            Default,
+            Keyword,
+            Builtin,
+            Method,
+            Number,
+            String,
+            Comment,
+            Identifier,
+            Operator,
+            Field
+        }
+
+        private struct EditorState
+        {
+            public List<string> Lines;
+            public int CursorLine;
+            public int CursorColumn;
+            public int SelStartLine;
+            public int SelStartColumn;
+            public int SelEndLine;
+            public int SelEndColumn;
+        }
+
+        private sealed class CompletionItem
+        {
+            public string Name = "";
+            public string Signature = "";
+            public string Summary = "";
+            public string InsertText = "";
+        }
+
+        private Vector2 _caretScreenPos;
+        private readonly Vector2 _mouseHitOffset = new Vector2(-8f, 0f);
+
+        private readonly Vector4 _colDefault = new(0.831f, 0.831f, 0.831f, 1.0f);
+        private readonly Vector4 _colKeyword = new(0.773f, 0.525f, 0.753f, 1.0f);
+        private readonly Vector4 _colBuiltin = new(0.831f, 0.831f, 0.831f, 1.0f);
+        private readonly Vector4 _colMethod = new(0.863f, 0.863f, 0.667f, 1.0f);
+        private readonly Vector4 _colNumber = new(0.710f, 0.808f, 0.659f, 1.0f);
+        private readonly Vector4 _colString = new(0.808f, 0.569f, 0.471f, 1.0f);
+        private readonly Vector4 _colComment = new(0.416f, 0.600f, 0.333f, 1.0f);
+        private readonly Vector4 _colOperator = new(0.875f, 0.875f, 0.875f, 1.0f);
+        private readonly Vector4 _colField = new(0.612f, 0.863f, 0.996f, 1.0f);
+        private readonly Vector4[] _bracketColors =
+        {
+            new(1f, 0.84f, 0f, 1.0f),
+            new(0.85f, 0.43f, 0.83f, 1.0f),
+            new(0.09f, 0.62f, 1f, 1.0f),
+        };
+        private readonly Vector4 _colSelection = new(0.149f, 0.310f, 0.471f, 1.0f);
+        private readonly Vector4 _colCaret = new(0.682f, 0.686f, 0.678f, 1.0f);
+        private readonly Vector4 _colIndentGuide = new(0.251f, 0.251f, 0.251f, 0.6f);
+        private readonly Vector4 _colLineNumber = new(0.5f, 0.5f, 0.5f, 0.9f);
+
+        public void Render(string id, Vector2 size)
+        {
+            unsafe
+            {
+                if (Program._jBMReg.NativePtr != null)
+                    ImGui.PushFont(Program._jBMReg.NativePtr);
+            }
+
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0.117f, 0.117f, 0.117f, 1.0f));
+
+            if (!ImGui.BeginChild(id, size, ImGuiChildFlags.Borders, ImGuiWindowFlags.HorizontalScrollbar))
+            {
+                ImGui.PopStyleColor();
+                unsafe
+                {
+                    if (Program._jBMReg.NativePtr != null)
+                        ImGui.PopFont();
+                }
+                return;
+            }
+
+            var io = ImGui.GetIO();
+            bool focused = ImGui.IsWindowFocused();
+            _hasFocus = focused;
+
+            if (focused)
+                HandleKeyboard(io);
+
+            if (_searchOpen)
+            {
+                float barWidth = 360f;
+                float barHeight = 100f;
+
+                Vector2 childPos = ImGui.GetCursorScreenPos();
+                Vector2 childSize = ImGui.GetContentRegionAvail();
+
+                Vector2 posTopRight = new Vector2(
+                    childPos.X + childSize.X - barWidth - 6f,
+                    childPos.Y + 6f
+                );
+
+                Vector2 oldCursor = ImGui.GetCursorScreenPos();
+                ImGui.SetCursorScreenPos(posTopRight);
+
+                ImGui.BeginChild("##SearchReplace",
+                    new Vector2(barWidth, barHeight),
+                    ImGuiChildFlags.Borders,
+                    ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoSavedSettings);
+
+                DrawSearchUI();
+                ImGui.EndChild();
+
+                ImGui.SetCursorScreenPos(oldCursor);
+            }
+
+            DrawContents();
+
+            ImGui.EndChild();
+            ImGui.PopStyleColor();
+
+            unsafe
+            {
+                if (Program._jBMReg.NativePtr != null)
+                    ImGui.PopFont();
+            }
+        }
+
         private static HashSet<string> BuildLuaUiMethods()
         {
             var set = new HashSet<string>(StringComparer.Ordinal);
@@ -198,88 +231,6 @@ namespace Starboard.UI
 
             return set;
         }
-
-        // VSCode Dark+ colours
-        private readonly Vector4 _colDefault = new(0.831f, 0.831f, 0.831f, 1.0f); // #D4D4D4
-        private readonly Vector4 _colKeyword = new(0.773f, 0.525f, 0.753f, 1.0f); // #C586C0
-        private readonly Vector4 _colBuiltin = new(0.831f, 0.831f, 0.831f, 1.0f); // default
-        private readonly Vector4 _colMethod = new(0.863f, 0.863f, 0.667f, 1.0f); // #DCDCAA
-        private readonly Vector4 _colNumber = new(0.710f, 0.808f, 0.659f, 1.0f); // #B5CEA8
-        private readonly Vector4 _colString = new(0.808f, 0.569f, 0.471f, 1.0f); // #CE9178
-        private readonly Vector4 _colComment = new(0.416f, 0.600f, 0.333f, 1.0f); // #6A9955
-        private readonly Vector4 _colOperator = new(0.875f, 0.875f, 0.875f, 1.0f); // near default
-        private readonly Vector4 _colField = new(0.612f, 0.863f, 0.996f, 1.0f); // #9CDCFE
-
-        // VSCode-like bracket pair colours
-        private readonly Vector4[] _bracketColors =
-        {
-            new(1f, 0.84f, 0f, 1.0f),      // Yellow
-            new(0.85f, 0.43f, 0.83f, 1.0f),// Pink
-            new(0.09f, 0.62f, 1f, 1.0f),   // Blue
-        };
-
-        // VSCode selection colour #264F78
-        private readonly Vector4 _colSelection = new(0.149f, 0.310f, 0.471f, 1.0f);
-
-        // VSCode caret colour #AEAFAD
-        private readonly Vector4 _colCaret = new(0.682f, 0.686f, 0.678f, 1.0f);
-
-        // Indent guide colour (#404040-ish)
-        private readonly Vector4 _colIndentGuide = new(0.251f, 0.251f, 0.251f, 0.6f);
-
-        private readonly Vector4 _colLineNumber = new(0.5f, 0.5f, 0.5f, 0.9f);
-
-
-        private float _lineHeight;
-        private float _charAdvance;
-
-        private const int TabSize = 4;
-
-        // ---------------------------------------------------------------------
-        // Completion popup (Intellisense-lite)
-        // ---------------------------------------------------------------------
-
-        private sealed class CompletionItem
-        {
-            public string Name = "";       // e.g. "ui.text"
-            public string Signature = "";  // e.g. "text(string str)"
-            public string Summary = "";
-            public string InsertText = ""; // e.g. "ui.text()"
-        }
-
-        private bool _completionInitialized = false;
-        private readonly List<CompletionItem> _completionItems = new();
-        private readonly List<CompletionItem> _completionFiltered = new();
-        private bool _completionOpen = false;
-        private string _completionFilter = "";
-        private int _completionSelectedIndex = 0;
-
-        // Last known caret screen position (bottom-left of caret)
-        private Vector2 _caretScreenPos;
-
-        // Inline completion (ghost text)
-        private string _inlineSuggestion = string.Empty;
-        private int _inlineSuggestionLine = -1;
-        private int _inlineSuggestionColumn = -1;
-
-        private bool _searchOpen = false;
-        private int _searchResultLine = -1;
-        private int _searchResultCol = -1;
-
-        private string _findText = "";
-        private string _replaceText = "";
-        private bool _caseSensitive = false;
-        private bool _wholeWord = false;
-
-        private string replaceLabel = "Replace";
-
-
-
-
-
-        // ---------------------------------------------------------------------
-        // Text storage helpers
-        // ---------------------------------------------------------------------
 
         private string GetText()
         {
@@ -310,7 +261,6 @@ namespace Starboard.UI
 
             ColorizeAll();
 
-            // Reset undo history to this loaded state
             _undoStack.Clear();
             _redoStack.Clear();
             _undoStack.Push(CaptureState());
@@ -324,10 +274,6 @@ namespace Starboard.UI
             if (_cursorColumn < 0) _cursorColumn = 0;
             if (_cursorColumn > line.Length) _cursorColumn = line.Length;
         }
-
-        // ---------------------------------------------------------------------
-        // Undo / Redo helpers
-        // ---------------------------------------------------------------------
 
         private EditorState CaptureState()
         {
@@ -389,10 +335,6 @@ namespace Starboard.UI
             RestoreState(next);
         }
 
-        // ---------------------------------------------------------------------
-        // Selection helpers
-        // ---------------------------------------------------------------------
-
         private void DeleteSelection()
         {
             if (!HasSelection)
@@ -402,7 +344,6 @@ namespace Starboard.UI
                 out int startLine, out int startCol,
                 out int endLine, out int endCol);
 
-            // Single-line selection
             if (startLine == endLine)
             {
                 string line = _lines[startLine];
@@ -414,7 +355,6 @@ namespace Starboard.UI
             }
             else
             {
-                // Multi-line: keep prefix of first line + suffix of last line
                 string first = _lines[startLine];
                 string last = _lines[endLine];
 
@@ -425,7 +365,6 @@ namespace Starboard.UI
 
                 _lines[startLine] = merged;
 
-                // Remove the lines in between and the old last line
                 for (int i = endLine; i > startLine; i--)
                     _lines.RemoveAt(i);
             }
@@ -462,8 +401,6 @@ namespace Starboard.UI
                 (startCol, endCol) = (endCol, startCol);
             }
         }
-
-        // --- Selection-based operations -------------------------------------------
 
         private void SelectAll()
         {
@@ -505,20 +442,17 @@ namespace Starboard.UI
             }
             else
             {
-                // first line
                 string first = _lines[startLine];
                 startCol = Math.Clamp(startCol, 0, first.Length);
                 sb.Append(first.AsSpan(startCol));
                 sb.Append('\n');
 
-                // middle lines
                 for (int i = startLine + 1; i < endLine; i++)
                 {
                     sb.Append(_lines[i]);
                     sb.Append('\n');
                 }
 
-                // last line
                 string last = _lines[endLine];
                 endCol = Math.Clamp(endCol, 0, last.Length);
                 sb.Append(last.AsSpan(0, endCol));
@@ -552,7 +486,6 @@ namespace Starboard.UI
             if (string.IsNullOrEmpty(s))
                 return string.Empty;
 
-            // ImGui / OS clipboards love to mix \r\n and \r
             return s.Replace("\r\n", "\n").Replace('\r', '\n');
         }
 
@@ -582,21 +515,17 @@ namespace Starboard.UI
                 return;
             }
 
-            // Mouse position relative to top-left of text area
             Vector2 local = mousePos - origin + _mouseHitOffset;
 
-            // Pick line
             int line = (int)Math.Floor(local.Y / lineSpacing);
             if (line < 0) line = 0;
             if (line >= _lines.Count) line = _lines.Count - 1;
 
             string text = _lines[line];
 
-            // Target X inside the line
             float targetX = local.X;
             if (targetX < 0) targetX = 0;
 
-            // Binary search for the smallest column whose width >= targetX
             int lo = 0;
             int hi = text.Length;
 
@@ -604,7 +533,6 @@ namespace Starboard.UI
             {
                 int mid = (lo + hi) / 2;
 
-                // Width of substring [0, mid)
                 string substr = text.Substring(0, mid);
                 float w = ImGui.CalcTextSize(substr).X;
 
@@ -633,7 +561,7 @@ namespace Starboard.UI
                 if (m.IsSpecialName)
                     continue;
 
-                string name = m.Name; // e.g. "text"
+                string name = m.Name;
 
                 var pars = m.GetParameters();
                 string sig = $"{name}(" +
@@ -664,7 +592,6 @@ namespace Starboard.UI
             if (pars.Length == 0)
                 return $"{name}()";
 
-            // Turn `float value, string label` into `value, label`
             var simple = string.Join(", ", pars.Select(p => p.Name));
             return $"{name}({simple})";
         }
@@ -699,7 +626,6 @@ namespace Starboard.UI
             if (item == null || string.IsNullOrEmpty(item.InsertText))
                 return;
 
-            // Undo-friendly insertion at caret
             PushUndoState();
 
             if (HasSelection)
@@ -728,7 +654,6 @@ namespace Starboard.UI
             string line = _lines[_cursorLine];
             int col = Math.Clamp(_cursorColumn, 0, line.Length);
 
-            // Find the start of the current word / chain (letters, digits, '_', '.')
             int start = col;
             while (start > 0)
             {
@@ -740,13 +665,12 @@ namespace Starboard.UI
             }
 
             if (start == col)
-                return; // nothing to complete
+                return;
 
             string prefix = line.Substring(start, col - start);
             if (string.IsNullOrWhiteSpace(prefix))
                 return;
 
-            // Find a completion whose Name starts with this prefix (e.g. "ui.text")
             CompletionItem? best = null;
 
             foreach (var item in _completionItems)
@@ -755,14 +679,13 @@ namespace Starboard.UI
                     item.Name.Length > prefix.Length)
                 {
                     best = item;
-                    break; // simple: first match is fine
+                    break;
                 }
             }
 
             if (best == null)
                 return;
 
-            // Show only the remaining suffix, e.g. "xt()" when you've typed "ui.te"
             string suffix = best.Name.Substring(prefix.Length);
 
             _inlineSuggestion = suffix;
@@ -786,14 +709,12 @@ namespace Starboard.UI
             _inlineSuggestion = string.Empty;
         }
 
-
         private void HandleCompletionPopup()
         {
             EnsureCompletionItems();
 
             var io = ImGui.GetIO();
 
-            // Open popup on Ctrl+Space while editor has focus
             if (_hasFocus && io.KeyCtrl && ImGui.IsKeyPressed(ImGuiKey.Space))
             {
                 Backspace();
@@ -805,7 +726,6 @@ namespace Starboard.UI
             if (!_completionOpen)
                 return;
 
-            // Position popup near caret
             Vector2 popupPos = _caretScreenPos + new Vector2(0f, 4f);
             ImGui.SetNextWindowPos(popupPos, ImGuiCond.Appearing);
             ImGui.SetNextWindowBgAlpha(0.95f);
@@ -824,7 +744,6 @@ namespace Starboard.UI
 
             _completionOpen = openFlag;
 
-            // Click outside editor + popup -> close
             if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
             {
                 bool popupHovered = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows);
@@ -836,14 +755,12 @@ namespace Starboard.UI
                 }
             }
 
-            // Filter box
             ImGui.InputText("Filter", ref _completionFilter, 128);
             if (ImGui.IsItemEdited())
                 ApplyCompletionFilter();
 
             ImGui.Separator();
 
-            // Keyboard nav inside completion window
             if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
             {
                 if (ImGui.IsKeyPressed(ImGuiKey.Escape))
@@ -872,17 +789,16 @@ namespace Starboard.UI
             }
 
             float rowHeight = ImGui.GetTextLineHeightWithSpacing();
-            int visibleRows = 10; // tweak to taste
+            int visibleRows = 10;
             Vector2 listSize = new Vector2(450f, rowHeight * visibleRows);
 
-            if (ImGui.BeginChild("##LuaCompletionList", listSize, ImGuiChildFlags.None))
+            if (ImGui.BeginChild("##LuaCompletionList", listSize, ImGuiChildFlags.None, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize))
             {
                 for (int i = 0; i < _completionFiltered.Count; i++)
                 {
                     var item = _completionFiltered[i];
                     bool selected = i == _completionSelectedIndex;
 
-                    // How wide can we draw here?
                     float maxLabelWidth = ImGui.GetContentRegionAvail().X;
 
                     string label = BuildCompletionLabel(item, maxLabelWidth);
@@ -898,9 +814,17 @@ namespace Starboard.UI
 
                     if (ImGui.IsItemHovered())
                     {
-                        ImGui.SetNextWindowSize(new Vector2(250, 75), ImGuiCond.Always);
+                        float wrapPx = ImGui.GetFontSize() * 20f;
+
+                        ImGui.SetNextWindowSizeConstraints(
+                            new Vector2(100f, 0f),
+                            new Vector2(wrapPx + 40, float.MaxValue)
+                        );
+
                         ImGui.BeginTooltip();
-                        ImGui.TextWrapped(item.Summary);
+                        ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + wrapPx);
+                        ImGui.TextUnformatted(SanitizeSummary(item.Summary));
+                        ImGui.PopTextWrapPos();
                         ImGui.EndTooltip();
                     }
 
@@ -913,11 +837,6 @@ namespace Starboard.UI
             ImGui.End();
         }
 
-
-        // ---------------------------------------------------------------------
-        // Editing operations
-        // ---------------------------------------------------------------------
-
         private static string GetLeadingIndent(string line)
         {
             int i = 0;
@@ -928,7 +847,6 @@ namespace Starboard.UI
 
         private static string StripComment(string line)
         {
-            // Remove trailing Lua comment for indentation logic
             int idx = line.IndexOf("--", StringComparison.Ordinal);
             if (idx >= 0)
                 line = line.Substring(0, idx);
@@ -941,33 +859,25 @@ namespace Starboard.UI
             if (trimmed.Length == 0)
                 return false;
 
-            // Very simple heuristics for Lua:
-
-            // if ... then
             if (trimmed.StartsWith("if ", StringComparison.Ordinal) &&
                 trimmed.EndsWith(" then", StringComparison.Ordinal))
                 return true;
 
-            // for ... do
             if (trimmed.StartsWith("for ", StringComparison.Ordinal) &&
                 trimmed.EndsWith(" do", StringComparison.Ordinal))
                 return true;
 
-            // while ... do
             if (trimmed.StartsWith("while ", StringComparison.Ordinal) &&
                 trimmed.EndsWith(" do", StringComparison.Ordinal))
                 return true;
 
-            // repeat ... until <cond>  (the "repeat" line opens, "until" closes)
             if (trimmed == "repeat")
                 return true;
 
-            // function / local function
             if (trimmed.StartsWith("function ", StringComparison.Ordinal) ||
                 trimmed.StartsWith("local function ", StringComparison.Ordinal))
                 return true;
 
-            // Plain "do"
             if (trimmed == "do")
                 return true;
 
@@ -980,19 +890,14 @@ namespace Starboard.UI
             if (trimmed.Length == 0)
                 return false;
 
-            // End of a block
             if (trimmed == "end" || trimmed.StartsWith("end ", StringComparison.Ordinal))
                 return true;
 
-            // End of "repeat ... until"
             if (trimmed.StartsWith("until ", StringComparison.Ordinal))
                 return true;
 
-            // Note: we deliberately do NOT treat "else"/"elseif" as closers here,
-            // so the next line after an else stays at the same indent level.
             return false;
         }
-
 
         private void InsertChar(char c)
         {
@@ -1013,21 +918,13 @@ namespace Starboard.UI
                 string left = prevLine[.._cursorColumn];
                 string right = prevLine[_cursorColumn..];
 
-                // Update the current line with the left side
                 _lines[_cursorLine] = left;
 
-                // -------------------------------
-                // Compute indent level for new line
-                // -------------------------------
-
-                // How many indent "levels" the previous line has (based on spaces/tabs)
                 int indentLevels = CountIndentLevels(prevLine);
 
-                // If the previous line is a block closer ("end", "until"), dedent by 1 level
                 if (LineIsLuaBlockCloser(prevLine) && indentLevels > 0)
                     indentLevels--;
 
-                // If the previous line opens a block (if/for/while/function/then/etc.), add 1 level
                 if (LineOpensLuaBlock(prevLine))
                     indentLevels++;
 
@@ -1220,10 +1117,6 @@ namespace Starboard.UI
             _cursorColumn = _lines[_cursorLine].Length;
         }
 
-        // ---------------------------------------------------------------------
-        // Keyboard handling
-        // ---------------------------------------------------------------------
-
         private void HandleKeyboard(ImGuiIOPtr io)
         {
             if (_completionOpen)
@@ -1232,15 +1125,14 @@ namespace Starboard.UI
             bool ctrl = io.KeyCtrl;
             bool shift = io.KeyShift;
 
-            // Ctrl combos (no repeat)
             if (ctrl)
             {
                 if (ImGui.IsKeyPressed(ImGuiKey.Z, true))
                 {
                     if (shift)
-                        Redo();      // Ctrl+Shift+Z
+                        Redo();
                     else
-                        Undo();      // Ctrl+Z
+                        Undo();
                 }
 
                 if (ImGui.IsKeyPressed(ImGuiKey.Y, false))
@@ -1260,7 +1152,6 @@ namespace Starboard.UI
 
             }
 
-            // Text input
             for (int i = 0; i < io.InputQueueCharacters.Size; i++)
             {
                 char c = (char)io.InputQueueCharacters[i];
@@ -1270,7 +1161,6 @@ namespace Starboard.UI
                 }
             }
 
-            // Navigation / editing keys
             if (ImGui.IsKeyPressed(ImGuiKey.Backspace, true))
                 Backspace();
             if (ImGui.IsKeyPressed(ImGuiKey.Delete, true))
@@ -1281,12 +1171,10 @@ namespace Starboard.UI
             {
                 if (!string.IsNullOrEmpty(_inlineSuggestion))
                 {
-                    // Consume Tab as "accept suggestion"
                     AcceptInlineSuggestion();
                 }
                 else
                 {
-                    // Normal tab insertion
                     InsertChar('\t');
                 }
             }
@@ -1372,10 +1260,6 @@ namespace Starboard.UI
 
             UpdateInlineSuggestion();
         }
-
-        // ---------------------------------------------------------------------
-        // Syntax colouring
-        // ---------------------------------------------------------------------
 
         private void ColorizeAll()
         {
@@ -1476,7 +1360,6 @@ namespace Starboard.UI
                     int len = i - start;
                     string ident = line.Substring(start, len);
 
-                    // Look at the previous non-whitespace char to see if we're after '.' or ':'
                     char prevNonWs = '\0';
                     for (int p = start - 1; p >= 0; p--)
                     {
@@ -1500,12 +1383,10 @@ namespace Starboard.UI
                     }
                     else if (LuaUiMethods.Contains(ident) || LuaAppMethods.Contains(ident))
                     {
-                        // Known API / app methods -> yellow
                         tt = TokenType.Method;
                     }
                     else if (afterDotOrColon)
                     {
-                        // Anything like state.counter, state.name etc. -> blue
                         tt = TokenType.Field;
                     }
                     else
@@ -1523,7 +1404,6 @@ namespace Starboard.UI
                     continue;
                 }
 
-                // Operators / punctuation we care to colour (including brackets)
                 if ("+-*/%=&|<>~^#()[]{}".Contains(c))
                 {
                     _tokens.Add(new Token
@@ -1540,10 +1420,6 @@ namespace Starboard.UI
                 i++;
             }
         }
-
-        // ---------------------------------------------------------------------
-        // Rendering
-        // ---------------------------------------------------------------------
 
         private static int CountIndentLevels(string line)
         {
@@ -1582,22 +1458,18 @@ namespace Starboard.UI
                 ImGui.SetScrollX(scrollX);
             }
 
-
-            // ---- compute gutter width for line numbers ----
             int lineCount = Math.Max(1, _lines.Count);
             int digits = lineCount.ToString().Length;
             string sample = new string('9', digits);
             float numWidth = ImGui.CalcTextSize(sample).X;
 
-            float gutterPadding = 6.0f; // px on each side of the number
+            float gutterPadding = 6.0f;
             float gutterWidth = numWidth + gutterPadding * 2.0f;
 
-            // Text area starts to the right of the gutter
             Vector2 textOrigin = origin + new Vector2(gutterWidth, 0);
 
-            float maxLinePixelWidth = gutterWidth; // at least gutter width
+            float maxLinePixelWidth = gutterWidth;
 
-            // Mouse selection / caret placement
             if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
             {
                 SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
@@ -1654,7 +1526,6 @@ namespace Starboard.UI
 
                 float linePixelWidth = gutterWidth;
 
-                // ---- draw line number in gutter ----
                 string numText = (lineIndex + 1).ToString();
                 Vector2 numSize = ImGui.CalcTextSize(numText);
 
@@ -1666,7 +1537,6 @@ namespace Starboard.UI
                     ImGui.GetColorU32(_colLineNumber),
                     numText);
 
-                // Compute nesting level per bracket column on this line
                 var bracketLevels = new Dictionary<int, int>();
                 int nesting = 0;
                 for (int col = 0; col < line.Length; col++)
@@ -1684,7 +1554,6 @@ namespace Starboard.UI
                     }
                 }
 
-                // Indent guides
                 int indentLevels = CountIndentLevels(line);
                 if (indentLevels > 0)
                 {
@@ -1700,7 +1569,6 @@ namespace Starboard.UI
                     }
                 }
 
-                // Selection highlight for this line
                 if (HasSelection &&
                     lineIndex >= selStartLine && lineIndex <= selEndLine)
                 {
@@ -1733,7 +1601,6 @@ namespace Starboard.UI
 
                     if (endCol > startCol)
                     {
-                        // x1 = width of [0, startCol)
                         float x1 = linePos.X;
                         if (startCol > 0)
                         {
@@ -1741,7 +1608,6 @@ namespace Starboard.UI
                             x1 += ImGui.CalcTextSize(left).X;
                         }
 
-                        // width of [startCol, endCol)
                         float x2 = x1;
                         int selLen = endCol - startCol;
                         if (selLen > 0)
@@ -1779,11 +1645,8 @@ namespace Starboard.UI
                     }
                 }
 
-
-
                 tokensByLine.TryGetValue(lineIndex, out var tokenList);
 
-                // Caret (VSCode-style blink, only when focused)
                 if (_hasFocus && lineIndex == _cursorLine)
                 {
                     int caretColIndex = Math.Clamp(_cursorColumn, 0, line.Length);
@@ -1848,7 +1711,6 @@ namespace Starboard.UI
                     CaretDone:
                     float caretX = linePos.X + xCaret;
 
-                    // Remember caret position so the popup can appear near it
                     _caretScreenPos = new Vector2(caretX, linePos.Y + _lineHeight);
 
                     double time = ImGui.GetTime();
@@ -1862,14 +1724,12 @@ namespace Starboard.UI
                         drawList.AddRectFilled(caretMin, caretMax, caretColor);
                     }
 
-                    // After drawing caret:
                     if (!string.IsNullOrEmpty(_inlineSuggestion) &&
                         _inlineSuggestionLine == lineIndex &&
                         _inlineSuggestionColumn == _cursorColumn)
                     {
-                        // Draw ghost text in a dimmed default colour
                         Vector4 ghostCol = _colDefault;
-                        ghostCol.W *= 0.35f; // lower alpha
+                        ghostCol.W *= 0.35f;
 
                         Vector2 ghostPos = new(caretX, linePos.Y);
                         drawList.AddText(ghostPos, ImGui.GetColorU32(ghostCol), _inlineSuggestion);
@@ -1934,7 +1794,6 @@ namespace Starboard.UI
                             _ => _colDefault
                         };
 
-                        // Rainbow bracket override: if this operator is a single bracket, recolour it
                         if (t.Type == TokenType.Operator && tokenText.Length == 1)
                         {
                             char ch = tokenText[0];
@@ -1973,11 +1832,8 @@ namespace Starboard.UI
             HandleCompletionPopup();
         }
 
-        // Cache XML docs per assembly path
         private static readonly Dictionary<string, XDocument> _xmlDocCache = new();
 
-        // Build the member name used in the XML docs, e.g.
-        // M:Starboard.Lua.LuaUiApi.text(System.String)
         private static string GetXmlMemberName(MethodInfo method)
         {
             var type = method.DeclaringType;
@@ -1986,7 +1842,7 @@ namespace Starboard.UI
 
             var sb = new StringBuilder();
             sb.Append("M:");
-            sb.Append(type.FullName!.Replace('+', '.')); // nested types
+            sb.Append(type.FullName!.Replace('+', '.'));
 
             sb.Append('.');
             sb.Append(method.Name);
@@ -2004,11 +1860,9 @@ namespace Starboard.UI
 
         private static string GetXmlTypeName(Type type)
         {
-            // XML docs strip ref-ness in the type name, so handle ref/out
             if (type.IsByRef)
                 type = type.GetElementType()!;
 
-            // Handle generics like System.Collections.Generic.List{System.String}
             if (type.IsGenericType)
             {
                 var genericDef = type.GetGenericTypeDefinition();
@@ -2030,7 +1884,25 @@ namespace Starboard.UI
             if (asm == null)
                 return null;
 
-            var xmlPath = Path.ChangeExtension(asm.Location, ".xml");
+            string? xmlPath = null;
+
+            try
+            {
+                var loc = asm.Location;
+                if (!string.IsNullOrEmpty(loc))
+                    xmlPath = Path.ChangeExtension(loc, ".xml");
+            }
+            catch { /* single-file often throws on Location */ }
+
+            if (string.IsNullOrEmpty(xmlPath) || !File.Exists(xmlPath))
+            {
+                var baseDir = AppContext.BaseDirectory;
+                var fileName = asm.GetName().Name + ".xml";
+                var candidate = Path.Combine(baseDir, fileName);
+                if (File.Exists(candidate))
+                    xmlPath = candidate;
+            }
+
             if (string.IsNullOrEmpty(xmlPath) || !File.Exists(xmlPath))
                 return null;
 
@@ -2056,39 +1928,40 @@ namespace Starboard.UI
             if (string.IsNullOrWhiteSpace(rawSummary))
                 return null;
 
-            // Clean up whitespace / newlines
             var cleaned = string.Join(" ",
                 rawSummary.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
             return cleaned.Trim();
         }
 
+        private static string SanitizeSummary(string? summary)
+        {
+            if (string.IsNullOrEmpty(summary)) return string.Empty;
+            return summary
+                .Replace('–', '-')
+                .Replace('—', '-')
+                .Replace('\u2018', '\'').Replace('\u2019', '\'')
+                .Replace('\u201C', '"').Replace('\u201D', '"')
+                .Replace('\u2026', '…');
+        }
+
         private static string BuildCompletionLabel(CompletionItem item, float maxWidth)
         {
-            // 1) Clean up summary so the font can render everything
             string summary = item.Summary ?? string.Empty;
 
-            summary = summary
-                .Replace('–', '-')   // en dash
-                .Replace('—', '-')   // em dash
-                .Replace('\u2018', '\'').Replace('\u2019', '\'') // curly '
-                .Replace('\u201C', '"').Replace('\u201D', '"')   // curly "
-                .Replace('\u2026', '…');                       // ellipsis -> "..."
+            summary = SanitizeSummary(summary);
 
             string baseLabel = $"{summary}";
 
-            // No need to truncate if it already fits
             if (ImGui.CalcTextSize(baseLabel).X <= maxWidth)
                 return baseLabel;
 
-            // Leave room for "..."
             const string ellipsis = "...";
             float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
             float targetWidth = maxWidth - ellipsisWidth - 4f;
             if (targetWidth <= 0)
-                return item.Name; // really narrow, just show the name
+                return item.Name;
 
-            // 2) Binary search the longest substring that fits in targetWidth
             int lo = 0;
             int hi = baseLabel.Length;
 
@@ -2116,11 +1989,9 @@ namespace Starboard.UI
             string line = _lines[lineIndex];
             col = Math.Clamp(col, 0, line.Length);
 
-            // Skip spaces first
             while (col > 0 && char.IsWhiteSpace(line[col - 1]))
                 col--;
 
-            // Then skip word chars
             while (col > 0 && IsWordChar(line[col - 1]))
                 col--;
 
@@ -2134,11 +2005,9 @@ namespace Starboard.UI
 
             int n = line.Length;
 
-            // Skip spaces
             while (col < n && char.IsWhiteSpace(line[col]))
                 col++;
 
-            // Skip word chars
             while (col < n && IsWordChar(line[col]))
                 col++;
 
@@ -2194,7 +2063,6 @@ namespace Starboard.UI
             string needle = _findText;
             var comparison = _caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
-            // Starting point: current match if any, otherwise caret
             int startLine = _searchResultLine >= 0 ? _searchResultLine : _cursorLine;
             int startCol = _searchResultLine >= 0 ? _searchResultCol : _cursorColumn;
 
@@ -2203,7 +2071,7 @@ namespace Starboard.UI
             if (forward)
             {
                 int line = startLine;
-                int col = startCol + (_searchResultLine >= 0 ? 1 : 0); // move past current
+                int col = startCol + (_searchResultLine >= 0 ? 1 : 0);
 
                 for (int wrap = 0; wrap < 2; wrap++)
                 {
@@ -2224,12 +2092,11 @@ namespace Starboard.UI
                         }
                     }
 
-                    // Wrap to top
                     line = 0;
                     col = 0;
                 }
             }
-            else // backward
+            else
             {
                 int line = startLine;
                 int col = startCol - 1;
@@ -2254,13 +2121,10 @@ namespace Starboard.UI
                         }
                     }
 
-                    // Wrap to bottom
                     line = lineCount - 1;
                     col = int.MaxValue;
                 }
             }
-
-            // No results
             ClearSearchResult();
         }
 
@@ -2287,20 +2151,17 @@ namespace Starboard.UI
             if (string.IsNullOrEmpty(text))
                 return -1;
 
-            // Clamp startIndex into valid range
             if (startIndex < 0)
                 startIndex = text.Length - 1;
             if (startIndex > text.Length - 1)
                 startIndex = text.Length - 1;
 
-            // Search backwards using the simpler overload
             int idx = text.LastIndexOf(needle, startIndex, cmp);
             while (idx >= 0)
             {
                 if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length))
                     return idx;
 
-                // Move one char left and keep searching
                 if (idx == 0)
                     break;
 
@@ -2309,7 +2170,6 @@ namespace Starboard.UI
 
             return -1;
         }
-
 
         private static bool IsWholeWordMatch(string text, int index, int length)
         {
@@ -2335,7 +2195,6 @@ namespace Starboard.UI
 
             string line = _lines[_searchResultLine];
 
-            // Safety in case indices are stale
             if (_searchResultCol + needle.Length > line.Length)
                 return;
 
@@ -2351,13 +2210,11 @@ namespace Starboard.UI
             _cursorColumn = before.Length + replacement.Length;
             ClearSelection();
 
-            // Clear current match and jump to NEXT one
             _searchResultLine = -1;
             _searchResultCol = -1;
 
-            DoSearch(true);   // <-- forward search
+            DoSearch(true);
         }
-
 
         private void ReplaceAll()
         {
@@ -2399,7 +2256,7 @@ namespace Starboard.UI
             }
 
             ClearSelection();
-            ClearSearchResult();   // your existing helper
+            ClearSearchResult();
             EnsureCursorInBounds();
         }
 
@@ -2417,14 +2274,12 @@ namespace Starboard.UI
 
             if (ImGui.InputText("##find", ref _findText, 256))
             {
-                // Reset search position when query changes
                 ClearSearchResult();
                 SearchNext();
             }
 
             ImGui.InputText("##replace", ref _replaceText, 256);
 
-            // Toggles
             if (ImGui.Button("Aa")) _caseSensitive = !_caseSensitive;
             ImGui.SameLine();
             if (ImGui.Button("ab.")) _wholeWord = !_wholeWord;
