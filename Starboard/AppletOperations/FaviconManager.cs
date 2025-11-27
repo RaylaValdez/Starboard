@@ -12,7 +12,6 @@ namespace Starboard
     /// </summary>
     internal static class FaviconManager
     {
-        // Set this from Program.cs. It MUST run on the render thread.
         public static Func<byte[], IntPtr>? TextureUploader { get; set; }
 
         public static int IconSizePx = 32;
@@ -22,13 +21,10 @@ namespace Starboard
             Timeout = TimeSpan.FromSeconds(10)
         };
 
-        // appletId -> ImGui texture handle
         private static readonly ConcurrentDictionary<string, IntPtr> _cache = new();
 
-        // appletId -> requested once flag
         private static readonly ConcurrentDictionary<string, bool> _requested = new();
 
-        // queue of completed downloads to upload on render thread
         private static readonly ConcurrentQueue<(string id, byte[] bytes)> _pending = new();
 
         /// <summary>Get a cached texture or IntPtr.Zero if not ready. Starts download once.</summary>
@@ -64,7 +60,6 @@ namespace Starboard
                 }
                 catch
                 {
-                    // ignore upload failures (fallback will render)
                 }
             }
         }
@@ -79,7 +74,6 @@ namespace Starboard
             }
             catch
             {
-                // swallow – we just never get an icon for this applet
             }
         }
     }

@@ -21,22 +21,17 @@ namespace Starboard;
 
 internal static class Program
 {
-    // Current mobi-frame region in overlay client pixels
     private static Rectangle _mobiFramePx;
 
-    // Animation clock for dt
     private static readonly Stopwatch _animClock = new();
     private static double _lastAnimSec = 0;
     private static float _dt = 1f / 120f;
 
-    // DPI scale from target window
     private static float _dpiScale = 1.0f;
 
-    // Icon texture
     private static IntPtr _cassioTex = IntPtr.Zero;
     private static int _cassioW, _cassioH;
 
-    // Font
     private static ImFontPtr _orbiBoldFont;
     private static ImFontPtr _orbiRegFont;
     private static ImFontPtr _orbiRegFontSmall;
@@ -56,7 +51,6 @@ internal static class Program
 
     private static IntPtr _lastNonWebCursor = IntPtr.Zero;
 
-    //Tray
     private static NotifyIcon? _trayIcon;
     private static CancellationTokenSource? _ctsForTray;
 
@@ -108,25 +102,23 @@ internal static class Program
                 {
                     var size = Math.Max(16, Math.Min(256, FaviconManager.IconSizePx));
 
-                    // If it's an SVG, rasterize to 256x256 in-memory and upload directly.
                     if (LooksLikeSvg(bytes))
                     {
                         using var ms = new MemoryStream(bytes);
                         var svgDoc = SvgDocument.Open<SvgDocument>(ms);
 
-                        // Invert black → white for fills and strokes
                         foreach (var elem in svgDoc.Descendants().OfType<SvgVisualElement>())
                         {
                             if (elem.Fill is SvgColourServer fill)
                             {
                                 var c = fill.Colour;
-                                if (c.R == 0 && c.G == 0 && c.B == 0)        // ONLY pure black
+                                if (c.R == 0 && c.G == 0 && c.B == 0)    
                                     elem.Fill = new SvgColourServer(Color.White);
                             }
                             if (elem.Stroke is SvgColourServer stroke)
                             {
                                 var c = stroke.Colour;
-                                if (c.R == 0 && c.G == 0 && c.B == 0)        // ONLY pure black
+                                if (c.R == 0 && c.G == 0 && c.B == 0)     
                                     elem.Stroke = new SvgColourServer(Color.White);
                             }
                         }
@@ -197,12 +189,10 @@ internal static class Program
 
         FaviconManager.IconSizePx = (int)MathF.Round(32f * _dpiScale);
 
-        // Load Settings
         StarboardSettingsStore.Load();
 
         _devMode = StarboardSettingsStore.Current.DevMode;
 
-        // Init playground
         Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         FirstStartWindow.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall, _devMode);
@@ -332,39 +322,6 @@ internal static class Program
 
             imguiRenderer.Render(d3dHost.SwapChain!);
             d3dHost.Present();
-
-            if (!WebBrowserManager.MouseOverWebRegion)
-            {
-                try
-                {
-                    _lastNonWebCursor = PInvoke.GetCursor();
-                }
-                catch
-                {
-
-                }
-            }
-            else
-            {
-                if (_lastNonWebCursor != IntPtr.Zero)
-                {
-                    try
-                    {
-                        PInvoke.SetCursor((HCURSOR)_lastNonWebCursor);
-                    }
-                    catch
-                    {
-
-                    }
-                }
-            }
-
-            if (fg == overlay.Hwnd && !_targetHwnd.IsNull && !WebBrowserManager.MouseOverWebRegion)
-            {
-                PInvoke.SetForegroundWindow(_targetHwnd);
-            }
-
-            //Thread.Sleep(1);
         }
     }
 

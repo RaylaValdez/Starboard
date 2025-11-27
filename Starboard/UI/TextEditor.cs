@@ -2,6 +2,7 @@
 using Starboard.Lua;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
 
@@ -14,6 +15,7 @@ namespace Starboard.UI
             get => GetText();
             set => SetText(value ?? string.Empty);
         }
+
         private string _inlineSuggestion = string.Empty;
         private string _completionFilter = "";
         private string _findText = "";
@@ -49,6 +51,8 @@ namespace Starboard.UI
         private float _lineHeight;
         private float _charAdvance;
 
+        private float _contentWidthPx = 0f;
+
         private readonly List<CompletionItem> _completionItems = new();
         private readonly List<CompletionItem> _completionFiltered = new();
         private readonly List<string> _lines = new() { string.Empty };
@@ -74,10 +78,7 @@ namespace Starboard.UI
 
         private static readonly HashSet<string> LuaAppMethods = new(StringComparer.Ordinal)
         {
-            "id",
-            "name",
-            "init",
-            "draw"
+            "id","name","init","draw"
         };
 
         private static readonly HashSet<string> LuaUiMethods = BuildLuaUiMethods();
@@ -124,7 +125,7 @@ namespace Starboard.UI
         }
 
         private Vector2 _caretScreenPos;
-        private readonly Vector2 _mouseHitOffset = new Vector2(-8f, 0f);
+        private readonly Vector2 _mouseHitOffset = new Vector2(0f, 0f);
 
         private readonly Vector4 _colDefault = new(0.831f, 0.831f, 0.831f, 1.0f);
         private readonly Vector4 _colKeyword = new(0.773f, 0.525f, 0.753f, 1.0f);
@@ -146,6 +147,14 @@ namespace Starboard.UI
         private readonly Vector4 _colIndentGuide = new(0.251f, 0.251f, 0.251f, 0.6f);
         private readonly Vector4 _colLineNumber = new(0.5f, 0.5f, 0.5f, 0.9f);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static float Px(float x) => MathF.Floor(x) + 0.5f;
+
+        const float SELECTION_PAD = 1.0f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float TextWidth(string s) => ImGui.CalcTextSize(s, false, 0f).X;
+
         public void Render(string id, Vector2 size)
         {
             unsafe
@@ -159,33 +168,20 @@ namespace Starboard.UI
             if (!ImGui.BeginChild(id, size, ImGuiChildFlags.Borders, ImGuiWindowFlags.HorizontalScrollbar))
             {
                 ImGui.PopStyleColor();
-                unsafe
-                {
-                    if (Program._jBMReg.NativePtr != null)
-                        ImGui.PopFont();
-                }
+                unsafe { if (Program._jBMReg.NativePtr != null) ImGui.PopFont(); }
                 return;
             }
 
             var io = ImGui.GetIO();
-            bool focused = ImGui.IsWindowFocused();
-            _hasFocus = focused;
-
-            if (focused)
-                HandleKeyboard(io);
+            _hasFocus = ImGui.IsWindowFocused();
+            if (_hasFocus) HandleKeyboard(io);
 
             if (_searchOpen)
             {
-                float barWidth = 360f;
-                float barHeight = 100f;
-
+                float barWidth = 360f, barHeight = 100f;
                 Vector2 childPos = ImGui.GetCursorScreenPos();
                 Vector2 childSize = ImGui.GetContentRegionAvail();
-
-                Vector2 posTopRight = new Vector2(
-                    childPos.X + childSize.X - barWidth - 6f,
-                    childPos.Y + 6f
-                );
+                Vector2 posTopRight = new(childPos.X + childSize.X - barWidth - 6f, childPos.Y + 6f);
 
                 Vector2 oldCursor = ImGui.GetCursorScreenPos();
                 ImGui.SetCursorScreenPos(posTopRight);
@@ -197,7 +193,6 @@ namespace Starboard.UI
 
                 DrawSearchUI();
                 ImGui.EndChild();
-
                 ImGui.SetCursorScreenPos(oldCursor);
             }
 
@@ -205,30 +200,18 @@ namespace Starboard.UI
 
             ImGui.EndChild();
             ImGui.PopStyleColor();
-
-            unsafe
-            {
-                if (Program._jBMReg.NativePtr != null)
-                    ImGui.PopFont();
-            }
+            unsafe { if (Program._jBMReg.NativePtr != null) ImGui.PopFont(); }
         }
 
         private static HashSet<string> BuildLuaUiMethods()
         {
             var set = new HashSet<string>(StringComparer.Ordinal);
-
             var apiType = typeof(LuaUiApi);
-            const BindingFlags flags =
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
-
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
             foreach (var m in apiType.GetMethods(flags))
             {
-                if (m.IsSpecialName)
-                    continue;
-
-                set.Add(m.Name);
+                if (!m.IsSpecialName) set.Add(m.Name);
             }
-
             return set;
         }
 
@@ -252,8 +235,7 @@ namespace Starboard.UI
                 while ((line = reader.ReadLine()) != null)
                     _lines.Add(line);
             }
-            if (_lines.Count == 0)
-                _lines.Add(string.Empty);
+            if (_lines.Count == 0) _lines.Add(string.Empty);
 
             _cursorLine = 0;
             _cursorColumn = 0;
@@ -264,6 +246,8 @@ namespace Starboard.UI
             _undoStack.Clear();
             _redoStack.Clear();
             _undoStack.Push(CaptureState());
+
+            _contentWidthPx = 0f;
         }
 
         private void EnsureCursorInBounds()
@@ -275,25 +259,21 @@ namespace Starboard.UI
             if (_cursorColumn > line.Length) _cursorColumn = line.Length;
         }
 
-        private EditorState CaptureState()
+        private EditorState CaptureState() => new()
         {
-            return new EditorState
-            {
-                Lines = new List<string>(_lines),
-                CursorLine = _cursorLine,
-                CursorColumn = _cursorColumn,
-                SelStartLine = _selStartLine,
-                SelStartColumn = _selStartColumn,
-                SelEndLine = _selEndLine,
-                SelEndColumn = _selEndColumn
-            };
-        }
+            Lines = new List<string>(_lines),
+            CursorLine = _cursorLine,
+            CursorColumn = _cursorColumn,
+            SelStartLine = _selStartLine,
+            SelStartColumn = _selStartColumn,
+            SelEndLine = _selEndLine,
+            SelEndColumn = _selEndColumn
+        };
 
         private void RestoreState(EditorState state)
         {
             _lines.Clear();
             _lines.AddRange(state.Lines);
-
             _cursorLine = state.CursorLine;
             _cursorColumn = state.CursorColumn;
             _selStartLine = state.SelStartLine;
@@ -302,22 +282,19 @@ namespace Starboard.UI
             _selEndColumn = state.SelEndColumn;
 
             ColorizeAll();
+            _contentWidthPx = 0f;
         }
 
         private void PushUndoState()
         {
-            if (_suppressUndoCapture)
-                return;
-
+            if (_suppressUndoCapture) return;
             _undoStack.Push(CaptureState());
             _redoStack.Clear();
         }
 
         private void Undo()
         {
-            if (_undoStack.Count == 0)
-                return;
-
+            if (_undoStack.Count == 0) return;
             var current = CaptureState();
             var prev = _undoStack.Pop();
             _redoStack.Push(current);
@@ -326,9 +303,7 @@ namespace Starboard.UI
 
         private void Redo()
         {
-            if (_redoStack.Count == 0)
-                return;
-
+            if (_redoStack.Count == 0) return;
             var current = CaptureState();
             var next = _redoStack.Pop();
             _undoStack.Push(current);
@@ -337,19 +312,15 @@ namespace Starboard.UI
 
         private void DeleteSelection()
         {
-            if (!HasSelection)
-                return;
+            if (!HasSelection) return;
 
-            GetSelectionBounds(
-                out int startLine, out int startCol,
-                out int endLine, out int endCol);
+            GetSelectionBounds(out int startLine, out int startCol, out int endLine, out int endCol);
 
             if (startLine == endLine)
             {
                 string line = _lines[startLine];
                 startCol = Math.Clamp(startCol, 0, line.Length);
                 endCol = Math.Clamp(endCol, 0, line.Length);
-
                 if (endCol > startCol)
                     _lines[startLine] = line.Remove(startCol, endCol - startCol);
             }
@@ -362,7 +333,6 @@ namespace Starboard.UI
                 endCol = Math.Clamp(endCol, 0, last.Length);
 
                 string merged = string.Concat(first.AsSpan(0, startCol), last.AsSpan(endCol));
-
                 _lines[startLine] = merged;
 
                 for (int i = endLine; i > startLine; i--)
@@ -374,6 +344,7 @@ namespace Starboard.UI
 
             ClearSelection();
             ColorizeAll();
+            _contentWidthPx = 0f;
         }
 
         private void ClearSelection()
@@ -382,20 +353,16 @@ namespace Starboard.UI
             _isSelecting = false;
         }
 
-        private void GetSelectionBounds(
-            out int startLine, out int startCol,
-            out int endLine, out int endCol)
+        private void GetSelectionBounds(out int startLine, out int startCol, out int endLine, out int endCol)
         {
             startLine = _selStartLine;
             startCol = _selStartColumn;
             endLine = _selEndLine;
             endCol = _selEndColumn;
 
-            if (!HasSelection)
-                return;
+            if (!HasSelection) return;
 
-            if (startLine > endLine ||
-               startLine == endLine && startCol > endCol)
+            if (startLine > endLine || (startLine == endLine && startCol > endCol))
             {
                 (startLine, endLine) = (endLine, startLine);
                 (startCol, endCol) = (endCol, startCol);
@@ -404,31 +371,24 @@ namespace Starboard.UI
 
         private void SelectAll()
         {
-            if (_lines.Count == 0)
-                return;
+            if (_lines.Count == 0) return;
 
             _selStartLine = 0;
             _selStartColumn = 0;
-
-            int lastLine = _lines.Count - 1;
-            _selEndLine = lastLine;
-            _selEndColumn = _lines[lastLine].Length;
+            int last = _lines.Count - 1;
+            _selEndLine = last;
+            _selEndColumn = _lines[last].Length;
 
             _isSelecting = false;
-
-            _cursorLine = lastLine;
+            _cursorLine = last;
             _cursorColumn = _selEndColumn;
         }
 
         private string GetSelectedText()
         {
-            if (!HasSelection)
-                return string.Empty;
+            if (!HasSelection) return string.Empty;
 
-            GetSelectionBounds(
-                out int startLine, out int startCol,
-                out int endLine, out int endCol);
-
+            GetSelectionBounds(out int startLine, out int startCol, out int endLine, out int endCol);
             var sb = new StringBuilder();
 
             if (startLine == endLine)
@@ -436,9 +396,7 @@ namespace Starboard.UI
                 string line = _lines[startLine];
                 startCol = Math.Clamp(startCol, 0, line.Length);
                 endCol = Math.Clamp(endCol, 0, line.Length);
-
-                if (endCol > startCol)
-                    sb.Append(line.AsSpan(startCol, endCol - startCol));
+                if (endCol > startCol) sb.Append(line.AsSpan(startCol, endCol - startCol));
             }
             else
             {
@@ -463,83 +421,60 @@ namespace Starboard.UI
 
         private void CopySelectionToClipboard()
         {
-            if (!HasSelection)
-                return;
-
+            if (!HasSelection) return;
             string text = GetSelectedText();
-            if (!string.IsNullOrEmpty(text))
-                ImGui.SetClipboardText(text);
+            if (!string.IsNullOrEmpty(text)) ImGui.SetClipboardText(text);
         }
 
         private void CutSelectionToClipboard()
         {
-            if (!HasSelection)
-                return;
-
+            if (!HasSelection) return;
             PushUndoState();
             CopySelectionToClipboard();
             DeleteSelection();
         }
 
         private static string NormalizeNewlines(string? s)
-        {
-            if (string.IsNullOrEmpty(s))
-                return string.Empty;
-
-            return s.Replace("\r\n", "\n").Replace('\r', '\n');
-        }
+            => string.IsNullOrEmpty(s) ? string.Empty : s.Replace("\r\n", "\n").Replace('\r', '\n');
 
         private void PasteFromClipboard()
         {
             string clip = NormalizeNewlines(ImGui.GetClipboardText());
-            if (string.IsNullOrEmpty(clip))
-                return;
+            if (string.IsNullOrEmpty(clip)) return;
 
             PushUndoState();
-
-            if (HasSelection)
-                DeleteSelection();
+            if (HasSelection) DeleteSelection();
 
             _suppressUndoCapture = true;
-            foreach (char c in clip)
-                InsertChar(c);
+            foreach (char c in clip) InsertChar(c);
             _suppressUndoCapture = false;
         }
 
-        private void SetCaretFromMouse(Vector2 mousePos, Vector2 origin, float lineSpacing)
+        private void SetCaretFromMouse(
+            Vector2 mousePos,
+            Vector2 origin,
+            float lineSpacing,
+            Dictionary<int, List<Token>> tokensByLine)
         {
-            if (_lines.Count == 0)
-            {
-                _cursorLine = 0;
-                _cursorColumn = 0;
-                return;
-            }
+            if (_lines.Count == 0) { _cursorLine = 0; _cursorColumn = 0; return; }
 
             Vector2 local = mousePos - origin + _mouseHitOffset;
 
-            int line = (int)Math.Floor(local.Y / lineSpacing);
-            if (line < 0) line = 0;
-            if (line >= _lines.Count) line = _lines.Count - 1;
+            int line = (int)MathF.Floor(local.Y / lineSpacing);
+            line = Math.Clamp(line, 0, _lines.Count - 1);
 
             string text = _lines[line];
+            tokensByLine.TryGetValue(line, out var tokenListForLine);
 
-            float targetX = local.X;
-            if (targetX < 0) targetX = 0;
+            float targetX = MathF.Max(local.X, 0f);
 
-            int lo = 0;
-            int hi = text.Length;
-
+            int lo = 0, hi = text.Length;
             while (lo < hi)
             {
                 int mid = (lo + hi) / 2;
-
-                string substr = text.Substring(0, mid);
-                float w = ImGui.CalcTextSize(substr).X;
-
-                if (w < targetX)
-                    lo = mid + 1;
-                else
-                    hi = mid;
+                float w = MeasurePrefixWidth(text, mid, tokenListForLine);
+                if (w < targetX) lo = mid + 1;
+                else hi = mid;
             }
 
             _cursorLine = line;
@@ -548,9 +483,7 @@ namespace Starboard.UI
 
         private void EnsureCompletionItems()
         {
-            if (_completionInitialized)
-                return;
-
+            if (_completionInitialized) return;
             _completionInitialized = true;
 
             var type = typeof(LuaUiApi);
@@ -558,29 +491,20 @@ namespace Starboard.UI
 
             foreach (var m in methods)
             {
-                if (m.IsSpecialName)
-                    continue;
+                if (m.IsSpecialName) continue;
 
                 string name = m.Name;
-
                 var pars = m.GetParameters();
-                string sig = $"{name}(" +
-                             string.Join(", ",
-                                 pars.Select(p => $"{p.ParameterType.Name} {p.Name}")) +
-                             ")";
-
+                string sig = $"{name}(" + string.Join(", ", pars.Select(p => $"{p.ParameterType.Name} {p.Name}")) + ")";
                 var summary = TryGetXmlSummary(m) ?? BuildSummary(name, pars);
 
-                var item = new CompletionItem
+                _completionItems.Add(new CompletionItem
                 {
                     Name = $"ui.{name}",
                     Signature = sig,
                     Summary = summary,
                     InsertText = $"ui.{name}()"
-                };
-
-                _completionItems.Add(item);
-
+                });
             }
 
             _completionFiltered.Clear();
@@ -588,18 +512,11 @@ namespace Starboard.UI
         }
 
         private static string BuildSummary(string name, ParameterInfo[] pars)
-        {
-            if (pars.Length == 0)
-                return $"{name}()";
-
-            var simple = string.Join(", ", pars.Select(p => p.Name));
-            return $"{name}({simple})";
-        }
+            => pars.Length == 0 ? $"{name}()" : $"{name}({string.Join(", ", pars.Select(p => p.Name))})";
 
         private void ApplyCompletionFilter()
         {
             _completionFiltered.Clear();
-
             string f = _completionFilter?.Trim().ToLowerInvariant() ?? "";
 
             if (string.IsNullOrEmpty(f))
@@ -617,23 +534,18 @@ namespace Starboard.UI
                     }
                 }
             }
-
             _completionSelectedIndex = 0;
         }
 
         private void InsertCompletion(CompletionItem item)
         {
-            if (item == null || string.IsNullOrEmpty(item.InsertText))
-                return;
+            if (item == null || string.IsNullOrEmpty(item.InsertText)) return;
 
             PushUndoState();
-
-            if (HasSelection)
-                DeleteSelection();
+            if (HasSelection) DeleteSelection();
 
             _suppressUndoCapture = true;
-            foreach (char c in item.InsertText)
-                InsertChar(c);
+            foreach (char c in item.InsertText) InsertChar(c);
             _suppressUndoCapture = false;
         }
 
@@ -643,13 +555,10 @@ namespace Starboard.UI
             _inlineSuggestionLine = -1;
             _inlineSuggestionColumn = -1;
 
-            if (!_hasFocus)
-                return;
-
+            if (!_hasFocus) return;
             EnsureCompletionItems();
 
-            if (_cursorLine < 0 || _cursorLine >= _lines.Count)
-                return;
+            if (_cursorLine < 0 || _cursorLine >= _lines.Count) return;
 
             string line = _lines[_cursorLine];
             int col = Math.Clamp(_cursorColumn, 0, line.Length);
@@ -660,19 +569,15 @@ namespace Starboard.UI
                 char ch = line[start - 1];
                 if (char.IsLetterOrDigit(ch) || ch == '_' || ch == '.')
                     start--;
-                else
-                    break;
+                else break;
             }
 
-            if (start == col)
-                return;
+            if (start == col) return;
 
             string prefix = line.Substring(start, col - start);
-            if (string.IsNullOrWhiteSpace(prefix))
-                return;
+            if (string.IsNullOrWhiteSpace(prefix)) return;
 
             CompletionItem? best = null;
-
             foreach (var item in _completionItems)
             {
                 if (item.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
@@ -682,12 +587,9 @@ namespace Starboard.UI
                     break;
                 }
             }
-
-            if (best == null)
-                return;
+            if (best == null) return;
 
             string suffix = best.Name.Substring(prefix.Length);
-
             _inlineSuggestion = suffix;
             _inlineSuggestionLine = _cursorLine;
             _inlineSuggestionColumn = _cursorColumn;
@@ -695,17 +597,11 @@ namespace Starboard.UI
 
         private void AcceptInlineSuggestion()
         {
-            if (string.IsNullOrEmpty(_inlineSuggestion))
-                return;
-
+            if (string.IsNullOrEmpty(_inlineSuggestion)) return;
             PushUndoState();
             _suppressUndoCapture = true;
-
-            foreach (char c in _inlineSuggestion)
-                InsertChar(c);
-
+            foreach (char c in _inlineSuggestion) InsertChar(c);
             _suppressUndoCapture = false;
-
             _inlineSuggestion = string.Empty;
         }
 
@@ -723,8 +619,7 @@ namespace Starboard.UI
                 ApplyCompletionFilter();
             }
 
-            if (!_completionOpen)
-                return;
+            if (!_completionOpen) return;
 
             Vector2 popupPos = _caretScreenPos + new Vector2(0f, 4f);
             ImGui.SetNextWindowPos(popupPos, ImGuiCond.Appearing);
@@ -732,10 +627,8 @@ namespace Starboard.UI
 
             bool openFlag = _completionOpen;
             if (!ImGui.Begin("##LuaCompletion", ref openFlag,
-                ImGuiWindowFlags.NoTitleBar |
-                ImGuiWindowFlags.NoMove |
-                ImGuiWindowFlags.NoSavedSettings |
-                ImGuiWindowFlags.NoNavInputs))
+                ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove |
+                ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoNavInputs))
             {
                 ImGui.End();
                 _completionOpen = openFlag;
@@ -756,8 +649,7 @@ namespace Starboard.UI
             }
 
             ImGui.InputText("Filter", ref _completionFilter, 128);
-            if (ImGui.IsItemEdited())
-                ApplyCompletionFilter();
+            if (ImGui.IsItemEdited()) ApplyCompletionFilter();
 
             ImGui.Separator();
 
@@ -790,9 +682,10 @@ namespace Starboard.UI
 
             float rowHeight = ImGui.GetTextLineHeightWithSpacing();
             int visibleRows = 10;
-            Vector2 listSize = new Vector2(450f, rowHeight * visibleRows);
+            Vector2 listSize = new(450f, rowHeight * visibleRows);
 
-            if (ImGui.BeginChild("##LuaCompletionList", listSize, ImGuiChildFlags.None, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize))
+            if (ImGui.BeginChild("##LuaCompletionList", listSize, ImGuiChildFlags.None,
+                ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize))
             {
                 for (int i = 0; i < _completionFiltered.Count; i++)
                 {
@@ -800,7 +693,6 @@ namespace Starboard.UI
                     bool selected = i == _completionSelectedIndex;
 
                     float maxLabelWidth = ImGui.GetContentRegionAvail().X;
-
                     string label = BuildCompletionLabel(item, maxLabelWidth);
 
                     if (ImGui.Selectable(label, selected))
@@ -815,12 +707,7 @@ namespace Starboard.UI
                     if (ImGui.IsItemHovered())
                     {
                         float wrapPx = ImGui.GetFontSize() * 20f;
-
-                        ImGui.SetNextWindowSizeConstraints(
-                            new Vector2(100f, 0f),
-                            new Vector2(wrapPx + 40, float.MaxValue)
-                        );
-
+                        ImGui.SetNextWindowSizeConstraints(new Vector2(100f, 0f), new Vector2(wrapPx + 40, float.MaxValue));
                         ImGui.BeginTooltip();
                         ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + wrapPx);
                         ImGui.TextUnformatted(SanitizeSummary(item.Summary));
@@ -828,58 +715,38 @@ namespace Starboard.UI
                         ImGui.EndTooltip();
                     }
 
-                    if (selected)
-                        ImGui.SetItemDefaultFocus();
+                    if (selected) ImGui.SetItemDefaultFocus();
                 }
             }
             ImGui.EndChild();
-
             ImGui.End();
         }
 
         private static string GetLeadingIndent(string line)
         {
             int i = 0;
-            while (i < line.Length && (line[i] == ' ' || line[i] == '\t'))
-                i++;
+            while (i < line.Length && (line[i] == ' ' || line[i] == '\t')) i++;
             return line.Substring(0, i);
         }
 
         private static string StripComment(string line)
         {
             int idx = line.IndexOf("--", StringComparison.Ordinal);
-            if (idx >= 0)
-                line = line.Substring(0, idx);
+            if (idx >= 0) line = line.Substring(0, idx);
             return line.Trim();
         }
 
         private static bool LineOpensLuaBlock(string line)
         {
             string trimmed = StripComment(line);
-            if (trimmed.Length == 0)
-                return false;
+            if (trimmed.Length == 0) return false;
 
-            if (trimmed.StartsWith("if ", StringComparison.Ordinal) &&
-                trimmed.EndsWith(" then", StringComparison.Ordinal))
-                return true;
-
-            if (trimmed.StartsWith("for ", StringComparison.Ordinal) &&
-                trimmed.EndsWith(" do", StringComparison.Ordinal))
-                return true;
-
-            if (trimmed.StartsWith("while ", StringComparison.Ordinal) &&
-                trimmed.EndsWith(" do", StringComparison.Ordinal))
-                return true;
-
-            if (trimmed == "repeat")
-                return true;
-
-            if (trimmed.StartsWith("function ", StringComparison.Ordinal) ||
-                trimmed.StartsWith("local function ", StringComparison.Ordinal))
-                return true;
-
-            if (trimmed == "do")
-                return true;
+            if (trimmed.StartsWith("if ", StringComparison.Ordinal) && trimmed.EndsWith(" then", StringComparison.Ordinal)) return true;
+            if (trimmed.StartsWith("for ", StringComparison.Ordinal) && trimmed.EndsWith(" do", StringComparison.Ordinal)) return true;
+            if (trimmed.StartsWith("while ", StringComparison.Ordinal) && trimmed.EndsWith(" do", StringComparison.Ordinal)) return true;
+            if (trimmed == "repeat") return true;
+            if (trimmed.StartsWith("function ", StringComparison.Ordinal) || trimmed.StartsWith("local function ", StringComparison.Ordinal)) return true;
+            if (trimmed == "do") return true;
 
             return false;
         }
@@ -887,28 +754,20 @@ namespace Starboard.UI
         private static bool LineIsLuaBlockCloser(string line)
         {
             string trimmed = StripComment(line);
-            if (trimmed.Length == 0)
-                return false;
+            if (trimmed.Length == 0) return false;
 
-            if (trimmed == "end" || trimmed.StartsWith("end ", StringComparison.Ordinal))
-                return true;
-
-            if (trimmed.StartsWith("until ", StringComparison.Ordinal))
-                return true;
+            if (trimmed == "end" || trimmed.StartsWith("end ", StringComparison.Ordinal)) return true;
+            if (trimmed.StartsWith("until ", StringComparison.Ordinal)) return true;
 
             return false;
         }
 
         private void InsertChar(char c)
         {
-            if (!_suppressUndoCapture)
-                PushUndoState();
+            if (!_suppressUndoCapture) PushUndoState();
 
-            if (HasSelection)
-                DeleteSelection();
-
-            if (_cursorLine < 0 || _cursorLine >= _lines.Count)
-                return;
+            if (HasSelection) DeleteSelection();
+            if (_cursorLine < 0 || _cursorLine >= _lines.Count) return;
 
             if (c == '\n')
             {
@@ -917,23 +776,14 @@ namespace Starboard.UI
 
                 string left = prevLine[.._cursorColumn];
                 string right = prevLine[_cursorColumn..];
-
                 _lines[_cursorLine] = left;
 
                 int indentLevels = CountIndentLevels(prevLine);
+                if (LineIsLuaBlockCloser(prevLine) && indentLevels > 0) indentLevels--;
+                if (LineOpensLuaBlock(prevLine)) indentLevels++;
+                if (indentLevels < 0) indentLevels = 0;
 
-                if (LineIsLuaBlockCloser(prevLine) && indentLevels > 0)
-                    indentLevels--;
-
-                if (LineOpensLuaBlock(prevLine))
-                    indentLevels++;
-
-                if (indentLevels < 0)
-                    indentLevels = 0;
-
-                int indentSpaces = indentLevels * TabSize;
-                string indent = new string(' ', indentSpaces);
-
+                string indent = new(' ', indentLevels * TabSize);
                 string newLine = indent + right;
                 _lines.Insert(_cursorLine + 1, newLine);
 
@@ -942,10 +792,9 @@ namespace Starboard.UI
 
                 ClearSelection();
                 ColorizeAll();
+                _contentWidthPx = 0f;
                 return;
             }
-
-
 
             string curLine = _lines[_cursorLine];
             _cursorColumn = Math.Clamp(_cursorColumn, 0, curLine.Length);
@@ -954,8 +803,7 @@ namespace Starboard.UI
             {
                 int spaces = TabSize - _cursorColumn % TabSize;
                 if (spaces <= 0) spaces = TabSize;
-
-                string insert = new string(' ', spaces);
+                string insert = new(' ', spaces);
                 curLine = curLine.Insert(_cursorColumn, insert);
                 _cursorColumn += insert.Length;
             }
@@ -967,23 +815,17 @@ namespace Starboard.UI
 
             _lines[_cursorLine] = curLine;
             ColorizeLine(_cursorLine);
+            _contentWidthPx = 0f;
         }
 
         private void Backspace()
         {
-            if (_lines.Count == 0)
-                return;
-
-            if (_cursorLine < 0 || _cursorLine >= _lines.Count)
-                return;
+            if (_lines.Count == 0) return;
+            if (_cursorLine < 0 || _cursorLine >= _lines.Count) return;
 
             PushUndoState();
 
-            if (HasSelection)
-            {
-                DeleteSelection();
-                return;
-            }
+            if (HasSelection) { DeleteSelection(); return; }
 
             ClearSelection();
 
@@ -991,17 +833,15 @@ namespace Starboard.UI
             {
                 var line = _lines[_cursorLine];
                 _cursorColumn = Math.Clamp(_cursorColumn, 1, line.Length);
-
                 line = line.Remove(_cursorColumn - 1, 1);
                 _lines[_cursorLine] = line;
                 _cursorColumn--;
-
                 ColorizeLine(_cursorLine);
+                _contentWidthPx = 0f;
                 return;
             }
 
-            if (_cursorLine == 0)
-                return;
+            if (_cursorLine == 0) return;
 
             var prev = _lines[_cursorLine - 1];
             var cur = _lines[_cursorLine];
@@ -1014,23 +854,17 @@ namespace Starboard.UI
             _cursorColumn = newCol;
 
             ColorizeAll();
+            _contentWidthPx = 0f;
         }
 
         private void Delete()
         {
-            if (_lines.Count == 0)
-                return;
-
-            if (_cursorLine < 0 || _cursorLine >= _lines.Count)
-                return;
+            if (_lines.Count == 0) return;
+            if (_cursorLine < 0 || _cursorLine >= _lines.Count) return;
 
             PushUndoState();
 
-            if (HasSelection)
-            {
-                DeleteSelection();
-                return;
-            }
+            if (HasSelection) { DeleteSelection(); return; }
 
             ClearSelection();
 
@@ -1041,27 +875,25 @@ namespace Starboard.UI
             {
                 line = line.Remove(_cursorColumn, 1);
                 _lines[_cursorLine] = line;
-
                 ColorizeLine(_cursorLine);
+                _contentWidthPx = 0f;
                 return;
             }
 
-            if (_cursorLine + 1 >= _lines.Count)
-                return;
+            if (_cursorLine + 1 >= _lines.Count) return;
 
             var next = _lines[_cursorLine + 1];
             _lines[_cursorLine] = line + next;
             _lines.RemoveAt(_cursorLine + 1);
 
             ColorizeAll();
+            _contentWidthPx = 0f;
         }
 
         private void MoveLeft()
         {
             ClearSelection();
-
-            if (_cursorColumn > 0)
-                _cursorColumn--;
+            if (_cursorColumn > 0) _cursorColumn--;
             else if (_cursorLine > 0)
             {
                 _cursorLine--;
@@ -1072,10 +904,8 @@ namespace Starboard.UI
         private void MoveRight()
         {
             ClearSelection();
-
             var line = _lines[_cursorLine];
-            if (_cursorColumn < line.Length)
-                _cursorColumn++;
+            if (_cursorColumn < line.Length) _cursorColumn++;
             else if (_cursorLine + 1 < _lines.Count)
             {
                 _cursorLine++;
@@ -1086,7 +916,6 @@ namespace Starboard.UI
         private void MoveUp()
         {
             ClearSelection();
-
             if (_cursorLine > 0)
             {
                 _cursorLine--;
@@ -1097,7 +926,6 @@ namespace Starboard.UI
         private void MoveDown()
         {
             ClearSelection();
-
             if (_cursorLine + 1 < _lines.Count)
             {
                 _cursorLine++;
@@ -1119,8 +947,7 @@ namespace Starboard.UI
 
         private void HandleKeyboard(ImGuiIOPtr io)
         {
-            if (_completionOpen)
-                return;
+            if (_completionOpen) return;
 
             bool ctrl = io.KeyCtrl;
             bool shift = io.KeyShift;
@@ -1129,161 +956,105 @@ namespace Starboard.UI
             {
                 if (ImGui.IsKeyPressed(ImGuiKey.Z, true))
                 {
-                    if (shift)
-                        Redo();
-                    else
-                        Undo();
+                    if (shift) Redo();
+                    else Undo();
                 }
 
-                if (ImGui.IsKeyPressed(ImGuiKey.Y, false))
-                    Redo();
-
-                if (ImGui.IsKeyPressed(ImGuiKey.A, false))
-                    SelectAll();
-
-                if (ImGui.IsKeyPressed(ImGuiKey.C, false))
-                    CopySelectionToClipboard();
-
-                if (ImGui.IsKeyPressed(ImGuiKey.X, false))
-                    CutSelectionToClipboard();
-
-                if (ImGui.IsKeyPressed(ImGuiKey.V, false))
-                    PasteFromClipboard();
-
+                if (ImGui.IsKeyPressed(ImGuiKey.Y, false)) Redo();
+                if (ImGui.IsKeyPressed(ImGuiKey.A, false)) SelectAll();
+                if (ImGui.IsKeyPressed(ImGuiKey.C, false)) CopySelectionToClipboard();
+                if (ImGui.IsKeyPressed(ImGuiKey.X, false)) CutSelectionToClipboard();
+                if (ImGui.IsKeyPressed(ImGuiKey.V, false)) PasteFromClipboard();
             }
 
             for (int i = 0; i < io.InputQueueCharacters.Size; i++)
             {
                 char c = (char)io.InputQueueCharacters[i];
-                if (!char.IsControl(c) || c == '\n' || c == '\t')
-                {
-                    InsertChar(c);
-                }
+                if (!char.IsControl(c) || c == '\n' || c == '\t') InsertChar(c);
             }
 
-            if (ImGui.IsKeyPressed(ImGuiKey.Backspace, true))
-                Backspace();
-            if (ImGui.IsKeyPressed(ImGuiKey.Delete, true))
-                Delete();
-            if (ImGui.IsKeyPressed(ImGuiKey.Enter, true))
-                InsertChar('\n');
+            if (ImGui.IsKeyPressed(ImGuiKey.Backspace, true)) Backspace();
+            if (ImGui.IsKeyPressed(ImGuiKey.Delete, true)) Delete();
+            if (ImGui.IsKeyPressed(ImGuiKey.Enter, true)) InsertChar('\n');
             if (ImGui.IsKeyPressed(ImGuiKey.Tab, false))
             {
-                if (!string.IsNullOrEmpty(_inlineSuggestion))
-                {
-                    AcceptInlineSuggestion();
-                }
-                else
-                {
-                    InsertChar('\t');
-                }
+                if (!string.IsNullOrEmpty(_inlineSuggestion)) AcceptInlineSuggestion();
+                else InsertChar('\t');
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.LeftArrow, true))
             {
-                if (ctrl)
-                    _cursorColumn = FindPrevWordBoundary(_cursorLine, _cursorColumn);
-                else
-                    MoveLeft();
-
-                if (shift)
-                    BeginOrExtendSelection();
-                else
-                    ClearSelection();
+                if (ctrl) _cursorColumn = FindPrevWordBoundary(_cursorLine, _cursorColumn);
+                else MoveLeft();
+                if (shift) BeginOrExtendSelection(); else ClearSelection();
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.RightArrow, true))
             {
-                if (ctrl)
-                    _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
-                else
-                    MoveRight();
-                if (shift)
-                    BeginOrExtendSelection();
-                else
-                    ClearSelection();
+                if (ctrl) _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
+                else MoveRight();
+                if (shift) BeginOrExtendSelection(); else ClearSelection();
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.UpArrow, true))
             {
-                if (ctrl)
-                    _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
+                if (ctrl) _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
                 else MoveUp();
-
-                if (shift)
-                    BeginOrExtendSelection();
-                else ClearSelection();
+                if (shift) BeginOrExtendSelection(); else ClearSelection();
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.DownArrow, true))
             {
-                if (ctrl)
-                    _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
+                if (ctrl) _cursorColumn = FindNextWordBoundary(_cursorLine, _cursorColumn);
                 else MoveDown();
-
-                if (shift)
-                    BeginOrExtendSelection();
-                else ClearSelection();
+                if (shift) BeginOrExtendSelection(); else ClearSelection();
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.Home, true))
             {
                 int smart = GetSmartHomeColumn(_cursorLine);
-                if (_cursorColumn == smart)
-                    _cursorColumn = 0;
-                else
-                    _cursorColumn = smart;
-
-                if (shift)
-                    BeginOrExtendSelection();
-                else
-                    ClearSelection();
+                _cursorColumn = (_cursorColumn == smart) ? 0 : smart;
+                if (shift) BeginOrExtendSelection(); else ClearSelection();
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.End, true))
             {
                 _cursorColumn = _lines[_cursorLine].Length;
-                if (shift)
-                    BeginOrExtendSelection();
-                else
-                    ClearSelection();
+                if (shift) BeginOrExtendSelection(); else ClearSelection();
             }
 
-            if (ctrl && ImGui.IsKeyPressed(ImGuiKey.F, false))
-            {
-                _searchOpen = true;
-            }
-
-
+            if (ctrl && ImGui.IsKeyPressed(ImGuiKey.F, false)) _searchOpen = true;
 
             EnsureCursorInBounds();
-
             UpdateInlineSuggestion();
         }
 
         private void ColorizeAll()
         {
             _tokens.Clear();
-            for (int i = 0; i < _lines.Count; i++)
-                ColorizeLine(i);
+            for (int i = 0; i < _lines.Count; i++) ColorizeLine(i);
         }
 
-        private static bool IsIdentStart(char c)
-            => char.IsLetter(c) || c == '_';
+        private static bool IsIdentStart(char c) => char.IsLetter(c) || c == '_';
+        private static bool IsIdentChar(char c) => char.IsLetterOrDigit(c) || c == '_';
 
-        private static bool IsIdentChar(char c)
-            => char.IsLetterOrDigit(c) || c == '_';
+        private const int MaxTokenizeLineLength = 8192;
 
         private void ColorizeLine(int lineIndex)
         {
-            if (lineIndex < 0 || lineIndex >= _lines.Count)
-                return;
+            if (lineIndex < 0 || lineIndex >= _lines.Count) return;
 
             _tokens.RemoveAll(t => t.Line == lineIndex);
 
             string line = _lines[lineIndex];
-            int i = 0;
-            int n = line.Length;
+
+            if (line.Length > MaxTokenizeLineLength)
+            {
+                // Don't tokenize monstrosities; render as plain text
+                return;
+            }
+
+            int i = 0, n = line.Length;
 
             while (i < n)
             {
@@ -1293,13 +1064,7 @@ namespace Starboard.UI
                 if (c == '-' && i + 1 < n && line[i + 1] == '-')
                 {
                     int len = n - i;
-                    _tokens.Add(new Token
-                    {
-                        Line = lineIndex,
-                        Start = i,
-                        Length = len,
-                        Type = TokenType.Comment
-                    });
+                    _tokens.Add(new Token { Line = lineIndex, Start = i, Length = len, Type = TokenType.Comment });
                     break;
                 }
 
@@ -1309,25 +1074,12 @@ namespace Starboard.UI
                     i++;
                     while (i < n)
                     {
-                        if (line[i] == quote)
-                        {
-                            i++;
-                            break;
-                        }
-                        if (line[i] == '\\' && i + 1 < n)
-                            i += 2;
-                        else
-                            i++;
+                        if (line[i] == quote) { i++; break; }
+                        if (line[i] == '\\' && i + 1 < n) i += 2;
+                        else i++;
                     }
-
                     int len = i - start;
-                    _tokens.Add(new Token
-                    {
-                        Line = lineIndex,
-                        Start = start,
-                        Length = len,
-                        Type = TokenType.String
-                    });
+                    _tokens.Add(new Token { Line = lineIndex, Start = start, Length = len, Type = TokenType.String });
                     continue;
                 }
 
@@ -1335,27 +1087,19 @@ namespace Starboard.UI
                 {
                     i++;
                     while (i < n && (char.IsDigit(line[i]) || line[i] == '.' || line[i] == 'x' || line[i] == 'X' ||
-                                     line[i] >= 'a' && line[i] <= 'f' || line[i] >= 'A' && line[i] <= 'F'))
+                                     (line[i] >= 'a' && line[i] <= 'f') || (line[i] >= 'A' && line[i] <= 'F')))
                     {
                         i++;
                     }
-
                     int len = i - start;
-                    _tokens.Add(new Token
-                    {
-                        Line = lineIndex,
-                        Start = start,
-                        Length = len,
-                        Type = TokenType.Number
-                    });
+                    _tokens.Add(new Token { Line = lineIndex, Start = start, Length = len, Type = TokenType.Number });
                     continue;
                 }
 
                 if (IsIdentStart(c))
                 {
                     i++;
-                    while (i < n && IsIdentChar(line[i]))
-                        i++;
+                    while (i < n && IsIdentChar(line[i])) i++;
 
                     int len = i - start;
                     string ident = line.Substring(start, len);
@@ -1364,55 +1108,23 @@ namespace Starboard.UI
                     for (int p = start - 1; p >= 0; p--)
                     {
                         char pc = line[p];
-                        if (!char.IsWhiteSpace(pc))
-                        {
-                            prevNonWs = pc;
-                            break;
-                        }
+                        if (!char.IsWhiteSpace(pc)) { prevNonWs = pc; break; }
                     }
                     bool afterDotOrColon = prevNonWs == '.' || prevNonWs == ':';
 
-                    TokenType tt;
-                    if (LuaKeywords.Contains(ident))
-                    {
-                        tt = TokenType.Keyword;
-                    }
-                    else if (LuaBuiltins.Contains(ident))
-                    {
-                        tt = TokenType.Builtin;
-                    }
-                    else if (LuaUiMethods.Contains(ident) || LuaAppMethods.Contains(ident))
-                    {
-                        tt = TokenType.Method;
-                    }
-                    else if (afterDotOrColon)
-                    {
-                        tt = TokenType.Field;
-                    }
-                    else
-                    {
-                        tt = TokenType.Identifier;
-                    }
+                    TokenType tt =
+                        LuaKeywords.Contains(ident) ? TokenType.Keyword :
+                        LuaBuiltins.Contains(ident) ? TokenType.Builtin :
+                        (LuaUiMethods.Contains(ident) || LuaAppMethods.Contains(ident)) ? TokenType.Method :
+                        afterDotOrColon ? TokenType.Field : TokenType.Identifier;
 
-                    _tokens.Add(new Token
-                    {
-                        Line = lineIndex,
-                        Start = start,
-                        Length = len,
-                        Type = tt
-                    });
+                    _tokens.Add(new Token { Line = lineIndex, Start = start, Length = len, Type = tt });
                     continue;
                 }
 
                 if ("+-*/%=&|<>~^#()[]{}".Contains(c))
                 {
-                    _tokens.Add(new Token
-                    {
-                        Line = lineIndex,
-                        Start = i,
-                        Length = 1,
-                        Type = TokenType.Operator
-                    });
+                    _tokens.Add(new Token { Line = lineIndex, Start = i, Length = 1, Type = TokenType.Operator });
                     i++;
                     continue;
                 }
@@ -1426,18 +1138,28 @@ namespace Starboard.UI
             int spaces = 0;
             foreach (char c in line)
             {
-                if (c == ' ')
-                    spaces++;
-                else if (c == '\t')
-                    spaces += TabSize;
-                else
-                    break;
+                if (c == ' ') spaces++;
+                else if (c == '\t') spaces += TabSize;
+                else break;
             }
             return spaces / TabSize;
         }
 
         private void DrawContents()
         {
+            var tokensByLine = new Dictionary<int, List<Token>>();
+            foreach (var t in _tokens)
+            {
+                if (!tokensByLine.TryGetValue(t.Line, out var list))
+                {
+                    list = new List<Token>();
+                    tokensByLine[t.Line] = list;
+                }
+                list.Add(t);
+            }
+            foreach (var list in tokensByLine.Values)
+                list.Sort((a, b) => a.Start.CompareTo(b.Start));
+
             var drawList = ImGui.GetWindowDrawList();
             Vector2 origin = ImGui.GetCursorScreenPos();
 
@@ -1450,12 +1172,9 @@ namespace Starboard.UI
 
             if (hovered && io.MouseWheelH != 0.0f)
             {
-                float scrollStep = ImGui.GetTextLineHeightWithSpacing() * 4.0f;
-
+                float step = lineSpacing * 4.0f;
                 float scrollX = ImGui.GetScrollX();
-                scrollX -= io.MouseWheelH * scrollStep;
-
-                ImGui.SetScrollX(scrollX);
+                ImGui.SetScrollX(scrollX - io.MouseWheelH * step);
             }
 
             int lineCount = Math.Max(1, _lines.Count);
@@ -1468,12 +1187,9 @@ namespace Starboard.UI
 
             Vector2 textOrigin = origin + new Vector2(gutterWidth, 0);
 
-            float maxLinePixelWidth = gutterWidth;
-
             if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
             {
-                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
-
+                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing, tokensByLine);
                 _isSelecting = true;
                 _selStartLine = _cursorLine;
                 _selStartColumn = _cursorColumn;
@@ -1482,368 +1198,241 @@ namespace Starboard.UI
             }
             else if (_isSelecting && ImGui.IsMouseDown(ImGuiMouseButton.Left))
             {
-                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
+                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing, tokensByLine);
                 _selEndLine = _cursorLine;
                 _selEndColumn = _cursorColumn;
             }
             else if (_isSelecting && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
             {
-                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing);
+                SetCaretFromMouse(io.MousePos, textOrigin, lineSpacing, tokensByLine);
                 _selEndLine = _cursorLine;
                 _selEndColumn = _cursorColumn;
                 _isSelecting = false;
             }
 
-            var tokensByLine = new Dictionary<int, List<Token>>();
-            foreach (var t in _tokens)
-            {
-                if (!tokensByLine.TryGetValue(t.Line, out var list))
-                {
-                    list = new List<Token>();
-                    tokensByLine[t.Line] = list;
-                }
-                list.Add(t);
-            }
-
-            foreach (var list in tokensByLine.Values)
-                list.Sort((a, b) => a.Start.CompareTo(b.Start));
-
             GetSelectionBounds(out int selStartLine, out int selStartCol, out int selEndLine, out int selEndCol);
 
+            float maxLinePixelWidth = gutterWidth;
+
+            int firstVisible = 0;
+            int lastVisible = Math.Max(0, _lines.Count - 1);
+
+            unsafe
             {
-                Vector2 sepTop = origin + new Vector2(gutterWidth - gutterPadding * 0.5f, 0);
-                Vector2 sepBot = sepTop + new Vector2(0, _lines.Count * lineSpacing);
-                drawList.AddLine(sepTop, sepBot, ImGui.GetColorU32(_colIndentGuide), 1.0f);
+                ImGuiListClipperPtr clipper =
+                    new ImGuiListClipperPtr(ImGuiNET.ImGuiNative.ImGuiListClipper_ImGuiListClipper());
+                clipper.Begin(_lines.Count, lineSpacing);
+
+                while (clipper.Step())
+                {
+                    firstVisible = clipper.DisplayStart;
+                    lastVisible = clipper.DisplayEnd - 1;
+
+                    for (int lineIndex = clipper.DisplayStart; lineIndex < clipper.DisplayEnd; lineIndex++)
+                    {
+                        string line = _lines[lineIndex];
+                        tokensByLine.TryGetValue(lineIndex, out var tokenList);
+
+                        Vector2 lineBase = origin + new Vector2(0, lineIndex * lineSpacing);
+                        Vector2 linePos = lineBase + new Vector2(gutterWidth, 0);
+
+                        string numText = (lineIndex + 1).ToString();
+                        Vector2 numSize = ImGui.CalcTextSize(numText);
+                        float numX = lineBase.X + gutterWidth - gutterPadding - numSize.X;
+                        float numY = lineBase.Y;
+                        drawList.AddText(new Vector2(numX, numY), ImGui.GetColorU32(_colLineNumber), numText);
+
+                        int indentLevels = CountIndentLevels(line);
+                        if (indentLevels > 0)
+                        {
+                            uint indentCol = ImGui.GetColorU32(_colIndentGuide);
+                            float guideXStep = TabSize * _charAdvance;
+                            for (int lvl = 0; lvl < indentLevels; lvl++)
+                            {
+                                float xStepped = linePos.X + (lvl + 0.5f) * guideXStep;
+                                drawList.AddLine(new Vector2(xStepped, linePos.Y),
+                                                 new Vector2(xStepped, linePos.Y + lineSpacing),
+                                                 indentCol, 1.0f);
+                            }
+                        }
+
+                        if (HasSelection && lineIndex >= selStartLine && lineIndex <= selEndLine)
+                        {
+                            int lineLen = line.Length;
+                            int startCol, endCol;
+
+                            if (selStartLine == selEndLine) { startCol = selStartCol; endCol = selEndCol; }
+                            else if (lineIndex == selStartLine) { startCol = selStartCol; endCol = lineLen; }
+                            else if (lineIndex == selEndLine) { startCol = 0; endCol = selEndCol; }
+                            else { startCol = 0; endCol = lineLen; }
+
+                            startCol = Math.Clamp(startCol, 0, lineLen);
+                            endCol = Math.Clamp(endCol, 0, lineLen);
+
+                            if (endCol > startCol)
+                            {
+                                float x1 = linePos.X + MeasurePrefixWidth(line, startCol, tokenList);
+                                float x2 = linePos.X + MeasurePrefixWidth(line, endCol, tokenList);
+                                x1 = Px(MathF.Floor(x1) - 1f) - SELECTION_PAD;
+                                x2 = Px(MathF.Ceiling(x2) + 1f) + SELECTION_PAD;
+                                drawList.AddRectFilled(new Vector2(x1, linePos.Y),
+                                                       new Vector2(x2, linePos.Y + _lineHeight),
+                                                       ImGui.GetColorU32(_colSelection));
+                            }
+                        }
+
+                        if (lineIndex == _searchResultLine && _searchResultCol >= 0 && !string.IsNullOrEmpty(_findText))
+                        {
+                            int matchLen = Math.Min(_findText.Length, line.Length - _searchResultCol);
+                            if (matchLen > 0)
+                            {
+                                float xStart = linePos.X + MeasurePrefixWidth(line, _searchResultCol, tokenList);
+                                float xEnd = linePos.X + MeasurePrefixWidth(line, _searchResultCol + matchLen, tokenList);
+                                drawList.AddRectFilled(new Vector2(xStart, linePos.Y),
+                                                       new Vector2(xEnd, linePos.Y + _lineHeight),
+                                                       ImGui.GetColorU32(new Vector4(0.8f, 0.4f, 0.2f, 0.45f)));
+                            }
+                        }
+
+                        if (_hasFocus && lineIndex == _cursorLine)
+                        {
+                            int caretColIndex = Math.Clamp(_cursorColumn, 0, line.Length);
+                            float xCaret = MeasurePrefixWidth(line, caretColIndex, tokenList);
+                            float caretX = Px(linePos.X + xCaret);
+                            _caretScreenPos = new Vector2(caretX, linePos.Y + _lineHeight);
+
+                            if (((long)(ImGui.GetTime() / 0.53) % 2) == 0)
+                            {
+                                drawList.AddRectFilled(new Vector2(caretX, linePos.Y),
+                                                       new Vector2(caretX + 1.0f, linePos.Y + _lineHeight),
+                                                       ImGui.GetColorU32(_colCaret));
+                            }
+
+                            if (!string.IsNullOrEmpty(_inlineSuggestion) &&
+                                _inlineSuggestionLine == lineIndex &&
+                                _inlineSuggestionColumn == _cursorColumn)
+                            {
+                                var ghostCol = _colDefault; ghostCol.W *= 0.35f;
+                                drawList.AddText(new Vector2(caretX, linePos.Y), ImGui.GetColorU32(ghostCol), _inlineSuggestion);
+                            }
+                        }
+
+                        float linePixelWidth = gutterWidth;
+                        if (tokenList == null || tokenList.Count == 0)
+                        {
+                            if (line.Length > 0)
+                                drawList.AddText(linePos, ImGui.GetColorU32(_colDefault), line);
+                            linePixelWidth += TextWidth(line);
+                        }
+                        else
+                        {
+                            int cursor = 0;
+                            float x = 0f;
+
+                            var bracketLevels = new Dictionary<int, int>();
+                            int nesting = 0;
+                            for (int col = 0; col < line.Length; col++)
+                            {
+                                char ch = line[col];
+                                if (ch is '(' or '[' or '{') { bracketLevels[col] = nesting; nesting++; }
+                                else if (ch is ')' or ']' or '}') { nesting = Math.Max(0, nesting - 1); bracketLevels[col] = nesting; }
+                            }
+
+                            foreach (var tok in tokenList)
+                            {
+                                if (tok.Start > cursor)
+                                {
+                                    int lenPlain = Math.Min(tok.Start - cursor, line.Length - cursor);
+                                    if (lenPlain > 0)
+                                    {
+                                        string plain = line.Substring(cursor, lenPlain);
+                                        drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(_colDefault), plain);
+                                        x += ImGui.CalcTextSize(plain).X;
+                                    }
+                                }
+
+                                if (tok.Start >= line.Length) { cursor = line.Length; break; }
+
+                                int maxLen = line.Length - tok.Start;
+                                int tokLen = Math.Min(tok.Length, maxLen);
+                                if (tokLen <= 0) { cursor = tok.Start; continue; }
+
+                                string tokenText = line.Substring(tok.Start, tokLen);
+                                if (tokenText.Length > 0)
+                                {
+                                    var col = tok.Type switch
+                                    {
+                                        TokenType.Keyword => _colKeyword,
+                                        TokenType.Builtin => _colBuiltin,
+                                        TokenType.Method => _colMethod,
+                                        TokenType.Number => _colNumber,
+                                        TokenType.String => _colString,
+                                        TokenType.Comment => _colComment,
+                                        TokenType.Operator => _colOperator,
+                                        TokenType.Field => _colField,
+                                        _ => _colDefault
+                                    };
+
+                                    if (tok.Type == TokenType.Operator && tokenText.Length == 1)
+                                    {
+                                        char ch = tokenText[0];
+                                        if ((ch is '(' or ')' or '[' or ']' or '{' or '}') &&
+                                            bracketLevels.TryGetValue(tok.Start, out int level) && _bracketColors.Length > 0)
+                                        {
+                                            col = _bracketColors[level % _bracketColors.Length];
+                                        }
+                                    }
+
+                                    drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(col), tokenText);
+                                    x += ImGui.CalcTextSize(tokenText).X;
+                                }
+
+                                cursor = tok.Start + tokLen;
+                            }
+
+                            if (cursor < line.Length)
+                            {
+                                string tail = line[cursor..];
+                                drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(_colDefault), tail);
+                                x += ImGui.CalcTextSize(tail).X;
+                            }
+
+                            linePixelWidth += x;
+                        }
+
+                        if (linePixelWidth > maxLinePixelWidth) maxLinePixelWidth = linePixelWidth;
+                    }
+                }
+
+                try { clipper.End(); }
+                catch { clipper.Destroy(); }
             }
 
-            for (int lineIndex = 0; lineIndex < _lines.Count; lineIndex++)
+            if (lastVisible >= firstVisible)
             {
-                string line = _lines[lineIndex];
-
-                Vector2 lineBase = origin + new Vector2(0, lineIndex * lineSpacing);
-
-                Vector2 linePos = lineBase + new Vector2(gutterWidth, 0);
-
-                float linePixelWidth = gutterWidth;
-
-                string numText = (lineIndex + 1).ToString();
-                Vector2 numSize = ImGui.CalcTextSize(numText);
-
-                float numX = lineBase.X + gutterWidth - gutterPadding - numSize.X;
-                float numY = lineBase.Y;
-
-                drawList.AddText(
-                    new Vector2(numX, numY),
-                    ImGui.GetColorU32(_colLineNumber),
-                    numText);
-
-                var bracketLevels = new Dictionary<int, int>();
-                int nesting = 0;
-                for (int col = 0; col < line.Length; col++)
-                {
-                    char ch = line[col];
-                    if (ch == '(' || ch == '[' || ch == '{')
-                    {
-                        bracketLevels[col] = nesting;
-                        nesting++;
-                    }
-                    else if (ch == ')' || ch == ']' || ch == '}')
-                    {
-                        nesting = Math.Max(0, nesting - 1);
-                        bracketLevels[col] = nesting;
-                    }
-                }
-
-                int indentLevels = CountIndentLevels(line);
-                if (indentLevels > 0)
-                {
-                    uint indentCol = ImGui.GetColorU32(_colIndentGuide);
-                    float guideXStep = TabSize * _charAdvance;
-
-                    for (int lvl = 0; lvl < indentLevels; lvl++)
-                    {
-                        float xStepped = linePos.X + (lvl + 0.5f) * guideXStep;
-                        Vector2 p1 = new(xStepped, linePos.Y);
-                        Vector2 p2 = new(xStepped, linePos.Y + lineSpacing);
-                        drawList.AddLine(p1, p2, indentCol, 1.0f);
-                    }
-                }
-
-                if (HasSelection &&
-                    lineIndex >= selStartLine && lineIndex <= selEndLine)
-                {
-                    int lineLen = line.Length;
-                    int startCol, endCol;
-
-                    if (selStartLine == selEndLine)
-                    {
-                        startCol = selStartCol;
-                        endCol = selEndCol;
-                    }
-                    else if (lineIndex == selStartLine)
-                    {
-                        startCol = selStartCol;
-                        endCol = lineLen;
-                    }
-                    else if (lineIndex == selEndLine)
-                    {
-                        startCol = 0;
-                        endCol = selEndCol;
-                    }
-                    else
-                    {
-                        startCol = 0;
-                        endCol = lineLen;
-                    }
-
-                    startCol = Math.Clamp(startCol, 0, lineLen);
-                    endCol = Math.Clamp(endCol, 0, lineLen);
-
-                    if (endCol > startCol)
-                    {
-                        float x1 = linePos.X;
-                        if (startCol > 0)
-                        {
-                            string left = line.Substring(0, startCol);
-                            x1 += ImGui.CalcTextSize(left).X;
-                        }
-
-                        float x2 = x1;
-                        int selLen = endCol - startCol;
-                        if (selLen > 0)
-                        {
-                            string mid = line.Substring(startCol, selLen);
-                            x2 = x1 + ImGui.CalcTextSize(mid).X;
-                        }
-
-                        Vector2 selMin = new(x1, linePos.Y);
-                        Vector2 selMax = new(x2, linePos.Y + _lineHeight);
-
-                        uint selCol = ImGui.GetColorU32(_colSelection);
-                        drawList.AddRectFilled(selMin, selMax, selCol);
-                    }
-                }
-
-                if (lineIndex == _searchResultLine &&
-                    _searchResultCol >= 0 &&
-                    !string.IsNullOrEmpty(_findText))
-                {
-                    int matchLen = Math.Min(_findText.Length, line.Length - _searchResultCol);
-                    if (matchLen > 0)
-                    {
-                        string prefix = line.Substring(0, _searchResultCol);
-                        float xStart = linePos.X + ImGui.CalcTextSize(prefix).X;
-
-                        string match = line.Substring(_searchResultCol, matchLen);
-                        float xEnd = xStart + ImGui.CalcTextSize(match).X;
-
-                        Vector2 a = new(xStart, linePos.Y);
-                        Vector2 b = new(xEnd, linePos.Y + _lineHeight);
-
-                        drawList.AddRectFilled(a, b,
-                            ImGui.GetColorU32(new Vector4(0.8f, 0.4f, 0.2f, 0.45f)));
-                    }
-                }
-
-                tokensByLine.TryGetValue(lineIndex, out var tokenList);
-
-                if (_hasFocus && lineIndex == _cursorLine)
-                {
-                    int caretColIndex = Math.Clamp(_cursorColumn, 0, line.Length);
-                    float xCaret = 0f;
-
-                    if (tokenList == null || tokenList.Count == 0)
-                    {
-                        if (caretColIndex > 0)
-                        {
-                            string sub = line.Substring(0, caretColIndex);
-                            xCaret = ImGui.CalcTextSize(sub).X;
-                        }
-                    }
-                    else
-                    {
-                        int srcIndex = 0;
-
-                        foreach (var t in tokenList)
-                        {
-                            if (caretColIndex <= t.Start)
-                            {
-                                if (caretColIndex > srcIndex)
-                                {
-                                    string plainSeg = line.Substring(srcIndex, caretColIndex - srcIndex);
-                                    xCaret += ImGui.CalcTextSize(plainSeg).X;
-                                }
-                                goto CaretDone;
-                            }
-
-                            if (t.Start > srcIndex)
-                            {
-                                string plainSeg = line.Substring(srcIndex, t.Start - srcIndex);
-                                xCaret += ImGui.CalcTextSize(plainSeg).X;
-                                srcIndex = t.Start;
-                            }
-
-                            int tokenEnd = t.Start + t.Length;
-                            if (caretColIndex <= tokenEnd)
-                            {
-                                if (caretColIndex > t.Start)
-                                {
-                                    string tokenSeg = line.Substring(t.Start, caretColIndex - t.Start);
-                                    xCaret += ImGui.CalcTextSize(tokenSeg).X;
-                                }
-                                goto CaretDone;
-                            }
-                            else
-                            {
-                                string tokenText = line.Substring(t.Start, tokenEnd - t.Start);
-                                xCaret += ImGui.CalcTextSize(tokenText).X;
-                                srcIndex = tokenEnd;
-                            }
-                        }
-
-                        if (caretColIndex > srcIndex)
-                        {
-                            string tailSeg = line.Substring(srcIndex, caretColIndex - srcIndex);
-                            xCaret += ImGui.CalcTextSize(tailSeg).X;
-                        }
-                    }
-
-                    CaretDone:
-                    float caretX = linePos.X + xCaret;
-
-                    _caretScreenPos = new Vector2(caretX, linePos.Y + _lineHeight);
-
-                    double time = ImGui.GetTime();
-                    bool caretVisible = (long)(time / 0.53) % 2 == 0;
-
-                    if (caretVisible)
-                    {
-                        Vector2 caretMin = new(caretX, linePos.Y);
-                        Vector2 caretMax = new(caretX + 1.0f, linePos.Y + _lineHeight);
-                        uint caretColor = ImGui.GetColorU32(_colCaret);
-                        drawList.AddRectFilled(caretMin, caretMax, caretColor);
-                    }
-
-                    if (!string.IsNullOrEmpty(_inlineSuggestion) &&
-                        _inlineSuggestionLine == lineIndex &&
-                        _inlineSuggestionColumn == _cursorColumn)
-                    {
-                        Vector4 ghostCol = _colDefault;
-                        ghostCol.W *= 0.35f;
-
-                        Vector2 ghostPos = new(caretX, linePos.Y);
-                        drawList.AddText(ghostPos, ImGui.GetColorU32(ghostCol), _inlineSuggestion);
-                    }
-                }
-
-
-                if (tokenList == null || tokenList.Count == 0)
-                {
-                    if (line.Length > 0)
-                        drawList.AddText(linePos, ImGui.GetColorU32(_colDefault), line);
-                    continue;
-                }
-
-                int cursor = 0;
-                float x = 0f;
-
-                foreach (var t in tokenList)
-                {
-                    if (t.Start > cursor)
-                    {
-                        int lenPlain = t.Start - cursor;
-                        if (cursor + lenPlain > line.Length)
-                            lenPlain = Math.Max(0, line.Length - cursor);
-
-                        if (lenPlain > 0)
-                        {
-                            string plain = line.Substring(cursor, lenPlain);
-                            Vector2 pos = linePos + new Vector2(x, 0);
-                            drawList.AddText(pos, ImGui.GetColorU32(_colDefault), plain);
-                            x += ImGui.CalcTextSize(plain).X;
-                        }
-                    }
-
-                    if (t.Start >= line.Length)
-                    {
-                        cursor = line.Length;
-                        break;
-                    }
-
-                    int maxLen = line.Length - t.Start;
-                    int tokLen = Math.Min(t.Length, maxLen);
-                    if (tokLen <= 0)
-                    {
-                        cursor = t.Start;
-                        continue;
-                    }
-
-                    string tokenText = line.Substring(t.Start, tokLen);
-                    if (tokenText.Length > 0)
-                    {
-                        Vector4 col = t.Type switch
-                        {
-                            TokenType.Keyword => _colKeyword,
-                            TokenType.Builtin => _colBuiltin,
-                            TokenType.Method => _colMethod,
-                            TokenType.Number => _colNumber,
-                            TokenType.String => _colString,
-                            TokenType.Comment => _colComment,
-                            TokenType.Operator => _colOperator,
-                            TokenType.Field => _colField,
-                            _ => _colDefault
-                        };
-
-                        if (t.Type == TokenType.Operator && tokenText.Length == 1)
-                        {
-                            char ch = tokenText[0];
-                            if (ch == '(' || ch == ')' || ch == '[' || ch == ']' || ch == '{' || ch == '}')
-                            {
-                                if (bracketLevels.TryGetValue(t.Start, out int level) && _bracketColors.Length > 0)
-                                {
-                                    int idx = level % _bracketColors.Length;
-                                    col = _bracketColors[idx];
-                                }
-                            }
-                        }
-
-                        Vector2 pos = linePos + new Vector2(x, 0);
-                        drawList.AddText(pos, ImGui.GetColorU32(col), tokenText);
-                        x += ImGui.CalcTextSize(tokenText).X;
-                    }
-
-                    cursor = t.Start + tokLen;
-                }
-
-                if (cursor < line.Length)
-                {
-                    string tail = line[cursor..];
-                    Vector2 pos = linePos + new Vector2(x, 0);
-                    drawList.AddText(pos, ImGui.GetColorU32(_colDefault), tail);
-                }
-
-                linePixelWidth = gutterWidth + x;
-                if (linePixelWidth > maxLinePixelWidth)
-                    maxLinePixelWidth = linePixelWidth;
+                float x = origin.X + gutterWidth - gutterPadding * 0.5f;
+                float y1 = origin.Y + firstVisible * lineSpacing;
+                float y2 = origin.Y + (lastVisible + 1) * lineSpacing;
+                ImGui.GetWindowDrawList().AddLine(new Vector2(x, y1), new Vector2(x, y2),
+                                                  ImGui.GetColorU32(_colIndentGuide), 1.0f);
             }
 
-            ImGui.Dummy(new Vector2(maxLinePixelWidth, _lines.Count * lineSpacing));
+            if (maxLinePixelWidth > _contentWidthPx) _contentWidthPx = maxLinePixelWidth;
+            ImGui.Dummy(new Vector2(MathF.Max(_contentWidthPx, maxLinePixelWidth),
+                                    _lines.Count * lineSpacing));
 
             HandleCompletionPopup();
         }
+
 
         private static readonly Dictionary<string, XDocument> _xmlDocCache = new();
 
         private static string GetXmlMemberName(MethodInfo method)
         {
-            var type = method.DeclaringType;
-            if (type == null)
-                throw new InvalidOperationException("Method has no DeclaringType.");
-
+            var type = method.DeclaringType ?? throw new InvalidOperationException("Method has no DeclaringType.");
             var sb = new StringBuilder();
             sb.Append("M:");
             sb.Append(type.FullName!.Replace('+', '.'));
-
             sb.Append('.');
             sb.Append(method.Name);
 
@@ -1854,83 +1443,60 @@ namespace Starboard.UI
                 sb.Append(string.Join(",", pars.Select(p => GetXmlTypeName(p.ParameterType))));
                 sb.Append(')');
             }
-
             return sb.ToString();
         }
 
         private static string GetXmlTypeName(Type type)
         {
-            if (type.IsByRef)
-                type = type.GetElementType()!;
-
+            if (type.IsByRef) type = type.GetElementType()!;
             if (type.IsGenericType)
             {
                 var genericDef = type.GetGenericTypeDefinition();
                 string genericName = genericDef.FullName!;
                 int tickIdx = genericName.IndexOf('`');
-                if (tickIdx >= 0)
-                    genericName = genericName[..tickIdx];
-
+                if (tickIdx >= 0) genericName = genericName[..tickIdx];
                 var args = type.GetGenericArguments().Select(GetXmlTypeName);
                 return $"{genericName}{{{string.Join(",", args)}}}";
             }
-
             return type.FullName!;
         }
 
         private static string? TryGetXmlSummary(MethodInfo method)
         {
             var asm = method.DeclaringType?.Assembly;
-            if (asm == null)
-                return null;
+            if (asm == null) return null;
 
             string? xmlPath = null;
-
             try
             {
                 var loc = asm.Location;
                 if (!string.IsNullOrEmpty(loc))
                     xmlPath = Path.ChangeExtension(loc, ".xml");
             }
-            catch { /* single-file often throws on Location */ }
+            catch { }
 
             if (string.IsNullOrEmpty(xmlPath) || !File.Exists(xmlPath))
             {
                 var baseDir = AppContext.BaseDirectory;
                 var fileName = asm.GetName().Name + ".xml";
                 var candidate = Path.Combine(baseDir, fileName);
-                if (File.Exists(candidate))
-                    xmlPath = candidate;
+                if (File.Exists(candidate)) xmlPath = candidate;
             }
 
-            if (string.IsNullOrEmpty(xmlPath) || !File.Exists(xmlPath))
-                return null;
+            if (string.IsNullOrEmpty(xmlPath) || !File.Exists(xmlPath)) return null;
 
             if (!_xmlDocCache.TryGetValue(xmlPath, out var doc))
             {
-                try
-                {
-                    doc = XDocument.Load(xmlPath);
-                    _xmlDocCache[xmlPath] = doc;
-                }
-                catch
-                {
-                    return null;
-                }
+                try { doc = XDocument.Load(xmlPath); _xmlDocCache[xmlPath] = doc; }
+                catch { return null; }
             }
 
             var memberName = GetXmlMemberName(method);
-
-            var member = doc.Descendants("member")
-                            .FirstOrDefault(m => (string?)m.Attribute("name") == memberName);
-
+            var member = doc.Descendants("member").FirstOrDefault(m => (string?)m.Attribute("name") == memberName);
             var rawSummary = member?.Element("summary")?.Value;
-            if (string.IsNullOrWhiteSpace(rawSummary))
-                return null;
+            if (string.IsNullOrWhiteSpace(rawSummary)) return null;
 
-            var cleaned = string.Join(" ",
-                rawSummary.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-
+            var cleaned = string.Join(" ", rawSummary.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
             return cleaned.Trim();
         }
 
@@ -1938,8 +1504,7 @@ namespace Starboard.UI
         {
             if (string.IsNullOrEmpty(summary)) return string.Empty;
             return summary
-                .Replace('–', '-')
-                .Replace('—', '-')
+                .Replace('–', '-').Replace('—', '-')
                 .Replace('\u2018', '\'').Replace('\u2019', '\'')
                 .Replace('\u201C', '"').Replace('\u201D', '"')
                 .Replace('\u2026', '…');
@@ -1947,54 +1512,37 @@ namespace Starboard.UI
 
         private static string BuildCompletionLabel(CompletionItem item, float maxWidth)
         {
-            string summary = item.Summary ?? string.Empty;
-
-            summary = SanitizeSummary(summary);
-
+            string summary = SanitizeSummary(item.Summary ?? string.Empty);
             string baseLabel = $"{summary}";
 
-            if (ImGui.CalcTextSize(baseLabel).X <= maxWidth)
-                return baseLabel;
+            if (ImGui.CalcTextSize(baseLabel).X <= maxWidth) return baseLabel;
 
             const string ellipsis = "...";
             float ellipsisWidth = ImGui.CalcTextSize(ellipsis).X;
             float targetWidth = maxWidth - ellipsisWidth - 4f;
-            if (targetWidth <= 0)
-                return item.Name;
+            if (targetWidth <= 0) return item.Name;
 
-            int lo = 0;
-            int hi = baseLabel.Length;
-
+            int lo = 0, hi = baseLabel.Length;
             while (lo < hi)
             {
                 int mid = (lo + hi) / 2;
-                string substr = baseLabel.Substring(0, mid);
-                float w = ImGui.CalcTextSize(substr).X;
-
-                if (w <= targetWidth)
-                    lo = mid + 1;
-                else
-                    hi = mid;
+                float w = ImGui.CalcTextSize(baseLabel.Substring(0, mid)).X;
+                if (w <= targetWidth) lo = mid + 1;
+                else hi = mid;
             }
-
             int len = Math.Max(0, lo - 1);
-            return string.Concat(baseLabel.AsSpan(0, len), ellipsis);
+            return baseLabel.Substring(0, len) + ellipsis;
         }
 
-        private static bool IsWordChar(char c)
-    => char.IsLetterOrDigit(c) || c == '_';
+        private static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
 
         private int FindPrevWordBoundary(int lineIndex, int col)
         {
             string line = _lines[lineIndex];
             col = Math.Clamp(col, 0, line.Length);
 
-            while (col > 0 && char.IsWhiteSpace(line[col - 1]))
-                col--;
-
-            while (col > 0 && IsWordChar(line[col - 1]))
-                col--;
-
+            while (col > 0 && char.IsWhiteSpace(line[col - 1])) col--;
+            while (col > 0 && IsWordChar(line[col - 1])) col--;
             return col;
         }
 
@@ -2004,13 +1552,8 @@ namespace Starboard.UI
             col = Math.Clamp(col, 0, line.Length);
 
             int n = line.Length;
-
-            while (col < n && char.IsWhiteSpace(line[col]))
-                col++;
-
-            while (col < n && IsWordChar(line[col]))
-                col++;
-
+            while (col < n && char.IsWhiteSpace(line[col])) col++;
+            while (col < n && IsWordChar(line[col])) col++;
             return col;
         }
 
@@ -2029,8 +1572,7 @@ namespace Starboard.UI
         {
             string line = _lines[lineIndex];
             int i = 0;
-            while (i < line.Length && (line[i] == ' ' || line[i] == '\t'))
-                i++;
+            while (i < line.Length && (line[i] == ' ' || line[i] == '\t')) i++;
             return i;
         }
 
@@ -2040,15 +1582,8 @@ namespace Starboard.UI
             _searchResultCol = -1;
         }
 
-        private void SearchNext()
-        {
-            DoSearch(forward: true);
-        }
-
-        private void SearchPrev()
-        {
-            DoSearch(forward: false);
-        }
+        private void SearchNext() => DoSearch(true);
+        private void SearchPrev() => DoSearch(false);
 
         private void DoSearch(bool forward)
         {
@@ -2128,8 +1663,7 @@ namespace Starboard.UI
             ClearSearchResult();
         }
 
-        private static int FindMatchInLine(string text, string needle, int startIndex,
-                                    StringComparison cmp, bool wholeWord)
+        private static int FindMatchInLine(string text, string needle, int startIndex, StringComparison cmp, bool wholeWord)
         {
             if (startIndex < 0) startIndex = 0;
             while (startIndex <= text.Length - needle.Length)
@@ -2137,37 +1671,27 @@ namespace Starboard.UI
                 int idx = text.IndexOf(needle, startIndex, cmp);
                 if (idx < 0) return -1;
 
-                if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length))
-                    return idx;
+                if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length)) return idx;
 
                 startIndex = idx + 1;
             }
             return -1;
         }
 
-        private static int FindLastMatchInLine(string text, string needle, int startIndex,
-                                StringComparison cmp, bool wholeWord)
+        private static int FindLastMatchInLine(string text, string needle, int startIndex, StringComparison cmp, bool wholeWord)
         {
-            if (string.IsNullOrEmpty(text))
-                return -1;
+            if (string.IsNullOrEmpty(text)) return -1;
 
-            if (startIndex < 0)
-                startIndex = text.Length - 1;
-            if (startIndex > text.Length - 1)
-                startIndex = text.Length - 1;
+            if (startIndex < 0) startIndex = text.Length - 1;
+            if (startIndex > text.Length - 1) startIndex = text.Length - 1;
 
             int idx = text.LastIndexOf(needle, startIndex, cmp);
             while (idx >= 0)
             {
-                if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length))
-                    return idx;
-
-                if (idx == 0)
-                    break;
-
+                if (!wholeWord || IsWholeWordMatch(text, idx, needle.Length)) return idx;
+                if (idx == 0) break;
                 idx = text.LastIndexOf(needle, idx - 1, cmp);
             }
-
             return -1;
         }
 
@@ -2184,19 +1708,14 @@ namespace Starboard.UI
 
         private void ReplaceCurrent()
         {
-            if (string.IsNullOrEmpty(_findText))
-                return;
-
-            if (_searchResultLine < 0 || _searchResultCol < 0)
-                return;
+            if (string.IsNullOrEmpty(_findText)) return;
+            if (_searchResultLine < 0 || _searchResultCol < 0) return;
 
             string needle = _findText;
             string replacement = _replaceText ?? string.Empty;
 
             string line = _lines[_searchResultLine];
-
-            if (_searchResultCol + needle.Length > line.Length)
-                return;
+            if (_searchResultCol + needle.Length > line.Length) return;
 
             PushUndoState();
 
@@ -2218,8 +1737,7 @@ namespace Starboard.UI
 
         private void ReplaceAll()
         {
-            if (string.IsNullOrEmpty(_findText) || _lines.Count == 0)
-                return;
+            if (string.IsNullOrEmpty(_findText) || _lines.Count == 0) return;
 
             string needle = _findText;
             string replacement = _replaceText ?? string.Empty;
@@ -2230,8 +1748,7 @@ namespace Starboard.UI
             for (int lineIndex = 0; lineIndex < _lines.Count; lineIndex++)
             {
                 string line = _lines[lineIndex];
-                if (string.IsNullOrEmpty(line))
-                    continue;
+                if (string.IsNullOrEmpty(line)) continue;
 
                 int searchFrom = 0;
                 bool changed = false;
@@ -2239,11 +1756,9 @@ namespace Starboard.UI
                 while (searchFrom <= line.Length - needle.Length)
                 {
                     int idx = FindMatchInLine(line, needle, searchFrom, comparison, _wholeWord);
-                    if (idx < 0)
-                        break;
+                    if (idx < 0) break;
 
                     line = string.Concat(line.AsSpan(0, idx), replacement, line.AsSpan(idx + needle.Length));
-
                     searchFrom = idx + replacement.Length;
                     changed = true;
                 }
@@ -2292,24 +1807,12 @@ namespace Starboard.UI
 
             if (ImGui.Button(replaceLabel))
             {
-                if (replaceLabel == "Replace")
-                {
-                    ReplaceCurrent();
-                }
-                else if (replaceLabel == "Replace All")
-                {
-                    ReplaceAll();
-                }
+                if (replaceLabel == "Replace") ReplaceCurrent();
+                else if (replaceLabel == "Replace All") ReplaceAll();
             }
 
-            if (ImGui.IsItemHovered() && ImGui.GetIO().KeyShift)
-            {
-                replaceLabel = "Replace All";
-            }
-            else
-            {
-                replaceLabel = "Replace";
-            }
+            if (ImGui.IsItemHovered() && ImGui.GetIO().KeyShift) replaceLabel = "Replace All";
+            else replaceLabel = "Replace";
 
             ImGui.SameLine();
             if (ImGui.Button("X"))
@@ -2319,5 +1822,38 @@ namespace Starboard.UI
             }
         }
 
+        private static float MeasurePrefixWidth(string line, int col, List<Token>? tokens)
+        {
+            col = Math.Clamp(col, 0, line.Length);
+            if (tokens == null || tokens.Count == 0)
+                return ImGui.CalcTextSize(line.Substring(0, col)).X;
+
+            int src = 0;
+            float x = 0f;
+
+            foreach (var t in tokens)
+            {
+                if (t.Start >= col) break;
+
+                if (t.Start > src)
+                {
+                    int len = Math.Min(t.Start - src, col - src);
+                    if (len > 0) x += ImGui.CalcTextSize(line.Substring(src, len)).X;
+                    src = t.Start;
+                }
+
+                int tokEnd = Math.Min(t.Start + t.Length, col);
+                if (tokEnd > src)
+                {
+                    x += ImGui.CalcTextSize(line.Substring(src, tokEnd - src)).X;
+                    src = tokEnd;
+                }
+            }
+
+            if (src < col)
+                x += ImGui.CalcTextSize(line.Substring(src, col - src)).X;
+
+            return x;
+        }
     }
 }

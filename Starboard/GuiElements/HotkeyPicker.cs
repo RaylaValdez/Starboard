@@ -1,7 +1,7 @@
 ﻿using ImGuiNET;
 using System.Numerics;
 using Overlay_Renderer.Methods;
-using Windows.Win32.UI.Input.KeyboardAndMouse; // VIRTUAL_KEY
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 namespace Starboard.GuiElements
 {

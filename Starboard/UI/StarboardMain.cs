@@ -173,7 +173,6 @@ namespace Starboard.UI
 
             scriptPath = Path.GetFullPath(scriptPath);
 
-            // See if we already have an applet for this script
             int existingIndex = -1;
             for (int i = 0; i < _applets.Count; i++)
             {
@@ -187,7 +186,6 @@ namespace Starboard.UI
                 }
             }
 
-            // Build the new applet
             var newApplet = new LuaApplet(scriptPath);
             newApplet.Initialize();
 
@@ -395,7 +393,6 @@ namespace Starboard.UI
                 dlWindow.ChannelsSetCurrent(1);
             }
 
-            // Hover / click handling
             bool hoveredThisFrame = ImGui.IsWindowHovered(ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.AllowWhenBlockedByPopup);
             bool clickedLeft = ImGui.IsMouseClicked(ImGuiMouseButton.Left);
             bool uiCapturingMouse = io.WantCaptureMouse;
@@ -496,12 +493,9 @@ namespace Starboard.UI
             Vector2 rightPos = panelStart - new Vector2(0f, 60f);
             rightPos.X += leftWidth + gapBetween;
 
-            // -----------------------------------------------------------------
-            // COOKIE-CUT BACKGROUND FOR WEB APPLETS (uses frozen webForBg)
-            // -----------------------------------------------------------------
             if (webForBg)
             {
-                dlWindow.ChannelsSetCurrent(0); // background channel
+                dlWindow.ChannelsSetCurrent(0);
 
                 Vector2 winPosScreen = ImGui.GetWindowPos();
                 Vector2 winSizeScreen = ImGui.GetWindowSize();
@@ -516,29 +510,24 @@ namespace Starboard.UI
                 uint borderCol = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.35f));
                 float rounding = 10f * _dpiScale;
 
-                // NOTE: rounding = 0 here to avoid tiny triangle gaps
-                // Left bar
                 dlWindow.AddRectFilled(
                     cardMin,
                     new Vector2(holeMin.X, cardMax.Y),
                     bgCol,
                     0.0f);
 
-                // Top bar
                 dlWindow.AddRectFilled(
                     new Vector2(holeMin.X, cardMin.Y),
                     new Vector2(cardMax.X, holeMin.Y),
                     bgCol,
                     0.0f);
 
-                // Right bar
                 dlWindow.AddRectFilled(
                     new Vector2(holeMax.X, cardMin.Y),
                     cardMax,
                     bgCol,
                     0.0f);
 
-                // Bottom bar
                 dlWindow.AddRectFilled(
                     new Vector2(holeMin.X, holeMax.Y),
                     new Vector2(holeMax.X, cardMax.Y),
@@ -1067,6 +1056,10 @@ namespace Starboard.UI
             if (ImGui.Button("Settings"))
             {
                 interactedThisFrame = true;
+                _selectedAppletIndex = -1;
+                selectedApplet = null;
+                isWebApplet = false;
+                WebBrowserManager.SetActiveApplet(null);
                 FirstStartWindow.OpenToPage(1);
             }
 
@@ -1116,7 +1109,6 @@ namespace Starboard.UI
                 Vector2 childSize = ImGui.GetWindowSize();
                 Vector2 center = winPos + childSize * 0.5f;
 
-                // how far in from each corner
                 float cornerPadding = 60f * _dpiScale;
                 float innerFactor = 0.65f;
                 float thickness = 3f * _dpiScale;

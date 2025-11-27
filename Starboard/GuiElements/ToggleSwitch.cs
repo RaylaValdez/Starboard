@@ -5,7 +5,6 @@ namespace Starboard.GuiElements
 {
     internal static class ToggleSwitch
     {
-        // Per-control animation state: ImGui ID -> t [0..1]
         private static readonly Dictionary<uint, float> _animT = new();
 
         /// <summary>

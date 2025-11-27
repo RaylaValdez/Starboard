@@ -20,7 +20,6 @@ namespace Starboard.UI
 
         private static IntPtr _cassioTex = IntPtr.Zero;
 
-        // --- Loading + fade sequencing ---
         private enum Phase { FadeIn, Preload, FadeOut, Done }
         private static Phase _phase = Phase.FadeIn;
 
@@ -37,12 +36,10 @@ namespace Starboard.UI
         private static float _preloadDuration;
         private static readonly Random _rng = new Random();
 
-        // --- StarboardMain fade knobs (hardcoded, tweak here) ---
         private const float MainFadeInSeconds = 0.1f;
         private const float MainFadeOutSeconds = 0.4f;
         private static float _mainFadeT = 0f;
 
-        // --- StarboardMain visibility during loading phases ---
         private const bool ShowMainDuringFadeIn = false;
         private const bool ShowMainDuringPreload = true;
         private const bool ShowMainDuringFadeOut = false;
@@ -63,7 +60,6 @@ namespace Starboard.UI
             _orbiRegFontSmall = smallFont;
             _cassioTex = cassioTex;
 
-            // reset sequence
             _phase = Phase.FadeIn;
             _isLoaded = false;
             _preloadActive = true;
@@ -103,7 +99,7 @@ namespace Starboard.UI
                 case Phase.FadeIn:
                 {
                     _fadeInTime = MathF.Min(_fadeInTime + dt, FadeInDuration);
-                    float t = _fadeInTime / FadeInDuration;         // 0..1
+                    float t = _fadeInTime / FadeInDuration;  
                     globalAlpha = t * t * (3f - 2f * t);
 
                     if (_fadeInTime >= FadeInDuration)
@@ -131,7 +127,7 @@ namespace Starboard.UI
                 case Phase.FadeOut:
                 {
                     _fadeOutTime = MathF.Min(_fadeOutTime + dt, FadeOutDuration);
-                    float t = _fadeOutTime / FadeOutDuration;       // 0..1
+                    float t = _fadeOutTime / FadeOutDuration; 
                     float eased = t * t * (3f - 2f * t);
                     globalAlpha = 1f - eased;
 
@@ -224,7 +220,7 @@ namespace Starboard.UI
                 HitTestRegions.AddCurrentWindow();
                 ImGui.End();
 
-                ImGui.PopStyleVar(); // Alpha
+                ImGui.PopStyleVar(); 
             }
 
             bool overlayRequested = overlayFromLoading || logicalMobiOpen;

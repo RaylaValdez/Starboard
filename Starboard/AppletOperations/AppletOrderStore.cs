@@ -62,14 +62,12 @@ namespace Starboard
             if (order == null || order.Count == 0)
                 return;
 
-            // Map id → applet
             var lookup = applets
                 .GroupBy(a => a.Id)
                 .ToDictionary(g => g.Key, g => g.First());
 
             var ordered = new List<IStarboardApplet>();
 
-            // First: all applets in the saved order (that still exist)
             foreach (var id in order)
             {
                 if (lookup.TryGetValue(id, out var app))
@@ -79,7 +77,6 @@ namespace Starboard
                 }
             }
 
-            // Then: any new/unknown applets, sorted by DisplayName
             var remaining = lookup.Values
                 .OrderBy(a => a.DisplayName, StringComparer.OrdinalIgnoreCase);
 

@@ -41,7 +41,6 @@ namespace Starboard.Lua
         private string? _lastError;
         private DateTime _lastErrorTime;
 
-        // persistent per-applet state
         private Dictionary<string, object?> _stateData = new();
 
         public string Id => _id;
@@ -103,7 +102,6 @@ namespace Starboard.Lua
 
         public void Draw(float dt, Vector2 availablesize)
         {
-            // hot reload check
             var t = File.GetLastWriteTimeUtc(_scriptPath);
             if (t > _lastWriteTime)
             {
@@ -123,7 +121,6 @@ namespace Starboard.Lua
                     }
                     else
                     {
-                        // Use the right-panel content region as viewport
                         Vector2 viewportSize = ImGui.GetContentRegionAvail();
                         WebBrowserManager.DrawWebPage(_id, url, viewportSize);
                     }
@@ -194,7 +191,6 @@ namespace Starboard.Lua
 
                 var appTable = newAppTable.Table;
 
-                // local helpers that use newScript, not the old one
                 string? GetString(string name)
                 {
                     var fn = appTable.Get(name);
@@ -222,7 +218,6 @@ namespace Starboard.Lua
 
                 Logger.Info($"[LuaApplet:{_id}] Reload OK. New id={newId}, name={newName}");
 
-                // Swap live state over to new script
                 _script = newScript;
                 _appTable = newAppTable;
                 _displayName = newName ?? _displayName;
@@ -233,7 +228,6 @@ namespace Starboard.Lua
 
                 _lastWriteTime = File.GetLastWriteTimeUtc(_scriptPath);
 
-                // re-run init() on the new script/table
                 CallVoid("init");
             }
             catch (Exception ex)
@@ -262,8 +256,8 @@ namespace Starboard.Lua
 
             var age = (DateTime.UtcNow - _lastErrorTime).TotalSeconds;
 
-            const double fullVisible = 4.0; // seconds at full opacity
-            const double fadeOut = 3.0;     // seconds fading
+            const double fullVisible = 4.0; 
+            const double fadeOut = 3.0;     
             const double total = fullVisible + fadeOut;
 
             if (age > total)
@@ -291,7 +285,6 @@ namespace Starboard.Lua
         {
             try
             {
-                // Create a fresh Lua table and populate from _stateData
                 var table = new Table(script);
 
                 foreach (var kv in _stateData)
@@ -320,7 +313,6 @@ namespace Starboard.Lua
                             break;
 
                         default:
-                            // unsupported type, skip for now
                             continue;
                     }
 
@@ -349,7 +341,6 @@ namespace Starboard.Lua
 
                 foreach (var pair in table.Pairs)
                 {
-                    // Only care about string keys
                     if (pair.Key.Type != DataType.String)
                         continue;
 
@@ -370,7 +361,6 @@ namespace Starboard.Lua
                             obj = val.String;
                             break;
                         default:
-                            // ignore nested tables/functions for now
                             continue;
                     }
 

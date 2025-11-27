@@ -29,9 +29,16 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
 
   <ItemGroup>
     <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
@@ -65,7 +72,6 @@
       <PackagePath>\</PackagePath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(DocumentationFile)" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always"/>
   </ItemGroup>
 
   <!-- Copy all assets by default -->
@@ -75,9 +81,16 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Content Remove="Assets\Gifs\EditorDemonstration.gif" />
+    <Content Remove="Assets\Gifs\spectrumdemo.gif" />
+    <Content Remove="Assets\Gifs\StarboardDemonstration.gif" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="ExampleApplets\ExampleLuaApplet.lua" />
     <None Remove="ExampleApplets\ExampleLuaWebApplet.lua" />
   </ItemGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\..\Overlay-Renderer\Overlay-Renderer\Overlay-Renderer.csproj" />
@@ -88,4 +101,7 @@
     <EmbeddedResource Include="ExampleApplets\ExampleLuaWebApplet.lua" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Installer\Output\" />
+  </ItemGroup>
 </Project>

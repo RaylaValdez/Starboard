@@ -162,11 +162,8 @@ internal static class FirstStartWindow
                 ImGui.NewLine();
                 ImGui.TextWrapped("Please read the following Disclaimer.");
 
-                // ---- size the disclaimer area from remaining height ----
-                // Reserve space for bottom separator + buttons + padding
                 float reservedFooter = buttonSize.Y + padding * 3.0f;
                 float childHeight = ImGui.GetContentRegionAvail().Y - reservedFooter;
-                // Clamp so it never collapses completely on tiny windows
                 float minChild = 120f * _dpiScale;
                 if (childHeight < minChild)
                     childHeight = minChild;
@@ -177,7 +174,6 @@ internal static class FirstStartWindow
 
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0f, 0f, 0f, 0f));
 
-                // Full width, fixed height; vertical scrollbar when needed
                 ImGui.BeginChild("##scrollText",
                     new Vector2(0, childHeight),
                     ImGuiChildFlags.None,
@@ -260,8 +256,6 @@ internal static class FirstStartWindow
                 ImGui.Separator();
                 ImGui.Spacing();
 
-                // --- keybind pickers grow naturally in the middle area ---
-
                 ImGui.Text("Mobiglass:");
                 ImGui.SameLine();
                 ImGui.SetCursorPosX(windowWidth - buttonSize.X - padding);
@@ -320,15 +314,13 @@ internal static class FirstStartWindow
 
                 ImGui.PopItemWidth();
 
-                // ---- push the joypad question down toward the bottom ----
-                // We know we still need some space for the text + toggle + bottom buttons.
                 float neededForJoypadBlock = toggleSize.Y + ImGui.GetTextLineHeightWithSpacing() * 2.2f + padding;
                 float availForJoypadBlock = ImGui.GetContentRegionAvail().Y - (buttonSize.Y + padding * 3f);
 
                 if (availForJoypadBlock > neededForJoypadBlock)
                 {
                     float extra = availForJoypadBlock - neededForJoypadBlock;
-                    ImGui.Dummy(new Vector2(0f, extra));   // vertical spacer
+                    ImGui.Dummy(new Vector2(0f, extra)); 
                 }
 
                 ImGui.Spacing();
@@ -340,11 +332,11 @@ internal static class FirstStartWindow
                 unsafe
                 {
                     if (_orbiRegFont.NativePtr != null)
-                        ImGui.PopFont(); // pop regular before pushing small
+                        ImGui.PopFont(); 
                 }
 
                 float currentY = ImGui.GetCursorPosY();
-                ImGui.SetCursorPos(new Vector2(toggleX, currentY)); //+ ImGui.GetTextLineHeightWithSpacing()));
+                ImGui.SetCursorPos(new Vector2(toggleX, currentY)); 
 
                 unsafe
                 {
@@ -384,7 +376,7 @@ internal static class FirstStartWindow
                 }
 
                 float secondCurrentY = ImGui.GetCursorPosY();
-                ImGui.SetCursorPos(new Vector2(toggleX, secondCurrentY)); //+ ImGui.GetTextLineHeightWithSpacing()));
+                ImGui.SetCursorPos(new Vector2(toggleX, secondCurrentY)); 
 
                 unsafe
                 {
@@ -515,7 +507,6 @@ internal static class FirstStartWindow
             }
         }
 
-        // Bottom buttons
         ImGui.SetCursorPosY(buttonY - padding * 0.5f);
         ImGui.Separator();
         ImGui.Spacing();
@@ -536,10 +527,6 @@ internal static class FirstStartWindow
         ImGui.SetCursorPos(new Vector2(rightButtonX, buttonY));
         if (ImGui.Button("Continue", buttonSize))
         {
-            // Explicit wizard flow:
-            // 0 -> 1
-            // 1 -> 2 if using controller, else complete
-            // 2 -> complete
             if (pageNumber == 0)
             {
                 pageNumber = 1;
@@ -607,7 +594,6 @@ internal static class FirstStartWindow
 
         float contentWidth = Math.Max(buttonsRegionWidth, buttonsTotalWidth);
 
-        // ----- SCROLLABLE CHILD (RIGHT-ALIGNED, INVISIBLE SCROLLBAR) -----
         ImGui.PushStyleColor(ImGuiCol.ChildBg, new Vector4(0f, 0f, 0f, 0f));
         ImGui.PushStyleColor(ImGuiCol.ScrollbarBg, new Vector4(0f, 0f, 0f, 0f));
         ImGui.PushStyleColor(ImGuiCol.ScrollbarGrab, new Vector4(0f, 0f, 0f, 0f));

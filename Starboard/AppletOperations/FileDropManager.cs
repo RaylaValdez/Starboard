@@ -27,7 +27,6 @@ namespace Starboard
 
             foreach (var (path, pt) in drops)
             {
-                // Only accept drops inside the dropZone rect
                 if (pt.X < dropZone.Left || pt.X > dropZone.Right ||
                     pt.Y < dropZone.Top || pt.Y > dropZone.Bottom)
                 {
