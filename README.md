@@ -22,8 +22,8 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 ## ❌ Known Issues
 
-- Cursor flicker when hovering over WebView2 region
 - Due to Starboard not hooking or reading any memory from Star Citizen, mobiglass detection isn't solid. 
+- The main Developer (me) is VERY dumb.
 
 
 ---
@@ -39,120 +39,23 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 ---
 
-## 🚀 Build instructions
+## 🚀 Usage
 
-### 1. Cloning
-Clone **Starboard** and **Overlay-Renderer** into the same parent folder (so relative paths match):
+### Star Citizen Must be fully loaded prior to launching Starboard
 
-```bash
-git clone https://github.com/RaylaValdez/Overlay-Renderer.git
-git clone https://github.com/RaylaValdez/Starboard.git
-```
+You can either;
 
----
+1. Download the installer from the latest release, follow the install wizard and launch from Start Menu or Desktop (if you made a shortcut)
 
-### 2. Add the project reference
-Add **Overlay-Renderer** to your Starboard solution:
+OR
 
-```
-Right-click your solution → Add → Existing Project → Browse to Overlay-Renderer/Overlay-Renderer.csproj
-```
+1. Download the binaries for manual extraction, also from the latest release.
+2. Extract them into a folder of your choice.
+3. Run Starboard.exe.
 
-Then add it as a project reference:
+### Starboard may function weirdly in Fullscreen, use Borderless Fullscreen wherever possible.
 
-```
-Right-click Starboard → Add → Project Reference → check "Overlay-Renderer"
-```
-
----
-
-### 3. Install required NuGet packages
-Starboard and Overlay-Renderer rely on a few NuGet dependencies:
-
-| Package | Used for |
-|----------|-----------|
-| `Vortice.Direct3D11` | Direct3D11 bindings |
-| `Vortice.DXGI` | DXGI swap-chain / adapter handling |
-| `Vortice.D3DCompiler` | Runtime shader compilation |
-| `ImGui.NET` | ImGui C# bindings |
-| `Svg` | SVG rasterization for favicons |
-| `System.Drawing.Common` | Bitmap manipulation |
-| `Microsoft.Web.WebView2` | (if you’re using WebViewSurface) embedded browser support |
-
-Run:
-```bash
-dotnet restore
-```
-or from Visual Studio, open the **Package Manager Console** and run:
-```powershell
-Update-Package -reinstall
-```
-
----
-
-### 4. Folder layout
-Your directory structure should look like this:
-
-```
-Projects/
- ├─ Overlay-Renderer/
- │   └─ Overlay-Renderer.csproj
- └─ Starboard/
-     └─ Starboard.csproj
-```
-
-If you keep them in different roots, fix the project reference path manually in the `.csproj`.
-
----
-
-### 5. Assets
-Ensure these folders exist under **Starboard/**:
-```
-Assets/
- ├─ Fonts/
- │   └─ Orbitron/...
- ├─ Icons/
- │   └─ cassiopia.png / cassiopia.ico
- └─ favicons/   (created automatically at runtime)
-```
-You can replace these with your own artwork, just keep file names consistent.
-
----
-
-### 6. Configuration
-Starboard loads `StarboardSettingsStore.json` on launch.  
-If it doesn’t exist, it’ll be created with defaults, but you can copy one from a working install.
-
----
-
-### 7. Build
-Set **Starboard** as the startup project.
-
-Select **x64 Debug** or **x64 Release**, then:
-
-```bash
-Ctrl + Shift + B
-```
-
-or from CLI:
-
-```bash
-dotnet build Starboard.sln -c Release
-```
-
----
-
-### 8. Run
-Launch **Starboard** (it will automatically attach to Star Citizen if running).
-
-You must start Star Citizen before Starboard.
-
----
-
-### 9. Optional (recommended)
-- **Enable unsafe code** in both projects (ImGui interop requires it).  
-- **Disable “Prefer 32-bit”** in project properties.  
-- If you’re testing WebView, make sure **Microsoft Edge WebView2 Runtime** is installed.
+Optionaly, enable game sounds when game is in background, so you can hear the game while you browse your applets!
 
 ---
 
