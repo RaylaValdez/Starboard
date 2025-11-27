@@ -28,17 +28,6 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 ---
 
-## 🧰 Technologies
-
-- **.NET 8.0**
-- **C# 11**
-- **Direct3D 11** via [Win32 interop (CsWin32)](https://github.com/microsoft/CsWin32)
-- **ImGui.NET** for GUI rendering
-- **DirectComposition** for hardware-accelerated transparency
-- **Windows API** (`HWND`, `RECT`, `SetWindowRgn`, `WM_NCHITTEST`, etc.)
-
----
-
 ## 🚀 Usage
 
 ### Star Citizen Must be fully loaded prior to launching Starboard
