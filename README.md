@@ -48,16 +48,6 @@ Optionaly, enable game sounds when game is in background, so you can hear the ga
 
 ---
 
-## 🧰 Development
-
-### Requirements
-- Visual Studio 2022 or Rider
-- .NET 8 SDK
-- Windows 10+ with Direct3D 11
-- [Overlay-Renderer](https://github.com/RaylaValdez/Overlay-Renderer)
-
----
-
 ## ⚖️ License
 
 Apache-2.0 License
