@@ -24,6 +24,7 @@ Starboard is a transparent, topmost, click-through overlay that renders a single
 
 - Due to Starboard not hooking or reading any memory from Star Citizen, mobiglass detection isn't solid. 
 - The main Developer (me) is VERY dumb.
+- Starboard does not close itself when the game closes.
 
 
 ---
