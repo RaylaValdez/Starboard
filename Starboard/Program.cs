@@ -63,7 +63,7 @@ internal static class Program
         //Logger.Info("Starboard starting...");
         _animClock.Start();
 
-        IntPtr rawHwnd = FindProcess.WaitForMainWindow("Discord", retries: 40, delayMs: 500);
+        IntPtr rawHwnd = FindProcess.WaitForMainWindow("StarCitizen", retries: 40, delayMs: 500);
         if (rawHwnd == IntPtr.Zero)
         {
             Logger.Error("Could not find StarCitizen main window. Exiting.");
