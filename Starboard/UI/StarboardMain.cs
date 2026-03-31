@@ -29,6 +29,7 @@ namespace Starboard.UI
         private static bool _isExpanded = false;
         private static float _expandAnim = 0f;
         private static bool _devMode;
+        private static bool _showFPS;
 
         private static readonly List<IStarboardApplet> _applets = new();
         private static int _selectedAppletIndex = -1;
@@ -58,7 +59,8 @@ namespace Starboard.UI
             ImFontPtr fontBold,
             ImFontPtr font,
             ImFontPtr smallFont,
-            bool devMode)
+            bool devMode,
+            bool showFPS)
         {
             _dpiScale = dpiScale;
             _mobiFramePx = mobiFrame;
@@ -68,6 +70,7 @@ namespace Starboard.UI
             _cassioTex = cassioTex;
 
             _devMode = devMode;
+            _showFPS = showFPS;
 
             _applets.Clear();
 
@@ -462,6 +465,13 @@ namespace Starboard.UI
                 if (_orbiBoldFont.NativePtr != null)
                     ImGui.PopFont();
             }
+
+            if (StarboardSettingsStore.Current.ShowFPS)
+            {
+                ImGui.SameLine();
+                ImGui.Text($" FPS: {ImGui.GetIO().Framerate:F0}"); // FPS Counter, if you feel so inclined.
+            }
+
 
             ImGui.Dummy(new Vector2(0f, 8f * _dpiScale));
 

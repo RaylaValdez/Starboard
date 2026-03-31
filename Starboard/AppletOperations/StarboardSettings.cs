@@ -20,6 +20,8 @@ namespace Starboard
         public List<ControllerBinding> OpenMobimapControllerBinds { get; set; } = new() { new ControllerBinding() };
         public List<ControllerBinding> OpenMobicommsControllerBinds { get; set; } = new() { new ControllerBinding() };
         public float IdleCloseSeconds { get; set; } = 15f;
+        public float MaxFPS { get; set; } = 60f;
+        public bool  ShowFPS { get; set; } = false;
     }
 
     internal sealed class StarboardSettingsStore
@@ -62,6 +64,9 @@ namespace Starboard
 
                 if (Current.IdleCloseSeconds <= 0)
                     Current.IdleCloseSeconds = 15f;
+
+                if (Current.MaxFPS <= 0)
+                    Current.MaxFPS = 60f;
             }
             catch (Exception ex)
             {

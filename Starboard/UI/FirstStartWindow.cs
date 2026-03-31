@@ -28,7 +28,11 @@ internal static class FirstStartWindow
 
     private static bool _devMode;
 
+    private static bool _showFPS;
+
     private static float _idleCloseSeconds = 15f;
+
+    private static float _maxFPS = 60f;
 
     private static List<ControllerBinding> _openMobiglassControllerBinds = new();
     private static List<ControllerBinding> _openMobimapControllerBinds = new();
@@ -72,6 +76,9 @@ internal static class FirstStartWindow
 
         _idleCloseSeconds = StarboardSettingsStore.Current.IdleCloseSeconds > 0 ? StarboardSettingsStore.Current.IdleCloseSeconds : 15f;
 
+        _maxFPS = StarboardSettingsStore.Current.MaxFPS > 0 ? StarboardSettingsStore.Current.MaxFPS: 60f;
+
+        _showFPS = StarboardSettingsStore.Current.ShowFPS;
         _openMobiglassControllerBinds =
             StarboardSettingsStore.Current.OpenMobiglassControllerBinds ?? new List<ControllerBinding> { new ControllerBinding() };
         _openMobimapControllerBinds =
@@ -313,6 +320,74 @@ internal static class FirstStartWindow
                 }
 
                 ImGui.PopItemWidth();
+
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                ImGui.TextWrapped("Maximum Framerate:");
+
+                float minFps = 15f;
+                float maxFps = 120f;
+
+                float maximumFPS = _maxFPS;
+
+                float sliderWidthFPS = buttonSize.X * 2f;
+                ImGui.SetCursorPosX(windowWidth - sliderWidthFPS - padding);
+                ImGui.PushItemWidth(sliderWidthFPS);
+
+                if (ImGui.SliderFloat("##MaxFPS", ref maximumFPS, minFps, maxFps, "%.0f FPS"))
+                {
+                    maximumFPS = Math.Clamp(maximumFPS, minFps, maxFps);
+                    _maxFPS = maximumFPS;
+                    StarboardSettingsStore.Current.MaxFPS = _maxFPS;
+                    StarboardSettingsStore.Save();
+                }
+
+                ImGui.PopItemWidth();
+
+                ImGui.Spacing();
+                ImGui.Separator();
+                ImGui.Spacing();
+
+                ImGui.TextWrapped("Show FPS (Starboards FPS, not Star Citizens.");
+
+                unsafe
+                {
+                    if (_orbiRegFont.NativePtr != null)
+                        ImGui.PopFont();
+                }
+
+                float thirdCurrentY = ImGui.GetCursorPosY();
+                ImGui.SetCursorPos(new Vector2(toggleX, thirdCurrentY));
+
+                unsafe
+                {
+                    if (_orbiRegFontSmall.NativePtr != null)
+                        ImGui.PushFont(_orbiRegFontSmall);
+                }
+
+                if (ToggleSwitch.Draw("DrawFPS", toggleSize, ref _showFPS, "YES", "NO"))
+                {
+                    StarboardSettingsStore.Current.ShowFPS = _showFPS;
+                    StarboardSettingsStore.Save();
+                }
+
+
+                unsafe
+                {
+                    if (_orbiRegFontSmall.NativePtr != null)
+                        ImGui.PopFont();
+                }
+
+                unsafe
+                {
+                    if (_orbiRegFont.NativePtr != null)
+                        ImGui.PushFont(_orbiRegFont);
+                }
+
+
 
                 float neededForJoypadBlock = toggleSize.Y + ImGui.GetTextLineHeightWithSpacing() * 2.2f + padding;
                 float availForJoypadBlock = ImGui.GetContentRegionAvail().Y - (buttonSize.Y + padding * 3f);

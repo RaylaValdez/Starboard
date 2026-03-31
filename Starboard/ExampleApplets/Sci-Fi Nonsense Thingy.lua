@@ -336,7 +336,7 @@ function app.draw(dt, w, h)
         ui.separator()
         ui.text("Status: ONLINE")
         ui.same_line()
-        ui.text("  |  FPS-ish dt: " .. string.format("%.3f", dt or 0))
+        ui.text("  |  FPS-ish dt: " .. string.format("%.3f", 1.0 / dt))
         ui.same_line()
         ui.text("  |  Test harness only; no real game logic.")
 

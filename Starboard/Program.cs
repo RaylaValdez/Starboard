@@ -35,7 +35,7 @@ internal static class Program
     private static ImFontPtr _orbiBoldFont;
     private static ImFontPtr _orbiRegFont;
     private static ImFontPtr _orbiRegFontSmall;
-    public static ImFontPtr _jBMReg;
+    public  static ImFontPtr _jBMReg;
 
     private static VIRTUAL_KEY _openMobiglassVk;
     private static ImGuiKey _openMobiglassImGui;
@@ -46,7 +46,7 @@ internal static class Program
     private static bool _usesJoypad;
     private static bool _firstRunComplete;
     private static bool _devMode;
-
+    private static bool _showFPS;
     private static HWND _targetHwnd;
 
     private static IntPtr _lastNonWebCursor = IntPtr.Zero;
@@ -54,13 +54,16 @@ internal static class Program
     private static NotifyIcon? _trayIcon;
     private static CancellationTokenSource? _ctsForTray;
 
+    private static float _maxFPS;
+
+
     [STAThread]
     private static void Main(string[] args)
     {
         //Logger.Info("Starboard starting...");
         _animClock.Start();
 
-        IntPtr rawHwnd = FindProcess.WaitForMainWindow("StarCitizen", retries: 40, delayMs: 500);
+        IntPtr rawHwnd = FindProcess.WaitForMainWindow("Discord", retries: 40, delayMs: 500);
         if (rawHwnd == IntPtr.Zero)
         {
             Logger.Error("Could not find StarCitizen main window. Exiting.");
@@ -195,7 +198,7 @@ internal static class Program
 
         Playground.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
         FirstStartWindow.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall);
-        StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall, _devMode);
+        StarboardMain.Initialize(_cassioTex, _dpiScale, _mobiFramePx, _orbiBoldFont, _orbiRegFont, _orbiRegFontSmall, _devMode, _showFPS);
         TextureService.Initialize(imguiRenderer);
         WebBrowserManager.Initialize(overlay.Hwnd, _mobiFramePx.Width, _mobiFramePx.Height);
 
@@ -212,6 +215,10 @@ internal static class Program
         _usesJoypad = StarboardSettingsStore.Current.UsesJoyPad;
 
         _firstRunComplete = StarboardSettingsStore.Current.FirstRunCompleted;
+
+        _maxFPS = StarboardSettingsStore.Current.MaxFPS;
+
+        _showFPS = StarboardSettingsStore.Current.ShowFPS;
 
         AppState.FirstRunCompleted = _firstRunComplete;
         AppState.ShowPlayground = AppState.FirstRunCompleted;
