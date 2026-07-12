@@ -1221,191 +1221,196 @@ namespace Starboard.UI
             {
                 ImGuiListClipperPtr clipper =
                     new ImGuiListClipperPtr(ImGuiNET.ImGuiNative.ImGuiListClipper_ImGuiListClipper());
-                clipper.Begin(_lines.Count, lineSpacing);
-
-                while (clipper.Step())
+                try
                 {
-                    firstVisible = clipper.DisplayStart;
-                    lastVisible = clipper.DisplayEnd - 1;
+                    clipper.Begin(_lines.Count, lineSpacing);
 
-                    for (int lineIndex = clipper.DisplayStart; lineIndex < clipper.DisplayEnd; lineIndex++)
+                    while (clipper.Step())
                     {
-                        string line = _lines[lineIndex];
-                        tokensByLine.TryGetValue(lineIndex, out var tokenList);
+                        firstVisible = clipper.DisplayStart;
+                        lastVisible = clipper.DisplayEnd - 1;
 
-                        Vector2 lineBase = origin + new Vector2(0, lineIndex * lineSpacing);
-                        Vector2 linePos = lineBase + new Vector2(gutterWidth, 0);
-
-                        string numText = (lineIndex + 1).ToString();
-                        Vector2 numSize = ImGui.CalcTextSize(numText);
-                        float numX = lineBase.X + gutterWidth - gutterPadding - numSize.X;
-                        float numY = lineBase.Y;
-                        drawList.AddText(new Vector2(numX, numY), ImGui.GetColorU32(_colLineNumber), numText);
-
-                        int indentLevels = CountIndentLevels(line);
-                        if (indentLevels > 0)
+                        for (int lineIndex = clipper.DisplayStart; lineIndex < clipper.DisplayEnd; lineIndex++)
                         {
-                            uint indentCol = ImGui.GetColorU32(_colIndentGuide);
-                            float guideXStep = TabSize * _charAdvance;
-                            for (int lvl = 0; lvl < indentLevels; lvl++)
+                            string line = _lines[lineIndex];
+                            tokensByLine.TryGetValue(lineIndex, out var tokenList);
+
+                            Vector2 lineBase = origin + new Vector2(0, lineIndex * lineSpacing);
+                            Vector2 linePos = lineBase + new Vector2(gutterWidth, 0);
+
+                            string numText = (lineIndex + 1).ToString();
+                            Vector2 numSize = ImGui.CalcTextSize(numText);
+                            float numX = lineBase.X + gutterWidth - gutterPadding - numSize.X;
+                            float numY = lineBase.Y;
+                            drawList.AddText(new Vector2(numX, numY), ImGui.GetColorU32(_colLineNumber), numText);
+
+                            int indentLevels = CountIndentLevels(line);
+                            if (indentLevels > 0)
                             {
-                                float xStepped = linePos.X + (lvl + 0.5f) * guideXStep;
-                                drawList.AddLine(new Vector2(xStepped, linePos.Y),
-                                                 new Vector2(xStepped, linePos.Y + lineSpacing),
-                                                 indentCol, 1.0f);
-                            }
-                        }
-
-                        if (HasSelection && lineIndex >= selStartLine && lineIndex <= selEndLine)
-                        {
-                            int lineLen = line.Length;
-                            int startCol, endCol;
-
-                            if (selStartLine == selEndLine) { startCol = selStartCol; endCol = selEndCol; }
-                            else if (lineIndex == selStartLine) { startCol = selStartCol; endCol = lineLen; }
-                            else if (lineIndex == selEndLine) { startCol = 0; endCol = selEndCol; }
-                            else { startCol = 0; endCol = lineLen; }
-
-                            startCol = Math.Clamp(startCol, 0, lineLen);
-                            endCol = Math.Clamp(endCol, 0, lineLen);
-
-                            if (endCol > startCol)
-                            {
-                                float x1 = linePos.X + MeasurePrefixWidth(line, startCol, tokenList);
-                                float x2 = linePos.X + MeasurePrefixWidth(line, endCol, tokenList);
-                                x1 = Px(MathF.Floor(x1) - 1f) - SELECTION_PAD;
-                                x2 = Px(MathF.Ceiling(x2) + 1f) + SELECTION_PAD;
-                                drawList.AddRectFilled(new Vector2(x1, linePos.Y),
-                                                       new Vector2(x2, linePos.Y + _lineHeight),
-                                                       ImGui.GetColorU32(_colSelection));
-                            }
-                        }
-
-                        if (lineIndex == _searchResultLine && _searchResultCol >= 0 && !string.IsNullOrEmpty(_findText))
-                        {
-                            int matchLen = Math.Min(_findText.Length, line.Length - _searchResultCol);
-                            if (matchLen > 0)
-                            {
-                                float xStart = linePos.X + MeasurePrefixWidth(line, _searchResultCol, tokenList);
-                                float xEnd = linePos.X + MeasurePrefixWidth(line, _searchResultCol + matchLen, tokenList);
-                                drawList.AddRectFilled(new Vector2(xStart, linePos.Y),
-                                                       new Vector2(xEnd, linePos.Y + _lineHeight),
-                                                       ImGui.GetColorU32(new Vector4(0.8f, 0.4f, 0.2f, 0.45f)));
-                            }
-                        }
-
-                        if (_hasFocus && lineIndex == _cursorLine)
-                        {
-                            int caretColIndex = Math.Clamp(_cursorColumn, 0, line.Length);
-                            float xCaret = MeasurePrefixWidth(line, caretColIndex, tokenList);
-                            float caretX = Px(linePos.X + xCaret);
-                            _caretScreenPos = new Vector2(caretX, linePos.Y + _lineHeight);
-
-                            if (((long)(ImGui.GetTime() / 0.53) % 2) == 0)
-                            {
-                                drawList.AddRectFilled(new Vector2(caretX, linePos.Y),
-                                                       new Vector2(caretX + 1.0f, linePos.Y + _lineHeight),
-                                                       ImGui.GetColorU32(_colCaret));
-                            }
-
-                            if (!string.IsNullOrEmpty(_inlineSuggestion) &&
-                                _inlineSuggestionLine == lineIndex &&
-                                _inlineSuggestionColumn == _cursorColumn)
-                            {
-                                var ghostCol = _colDefault; ghostCol.W *= 0.35f;
-                                drawList.AddText(new Vector2(caretX, linePos.Y), ImGui.GetColorU32(ghostCol), _inlineSuggestion);
-                            }
-                        }
-
-                        float linePixelWidth = gutterWidth;
-                        if (tokenList == null || tokenList.Count == 0)
-                        {
-                            if (line.Length > 0)
-                                drawList.AddText(linePos, ImGui.GetColorU32(_colDefault), line);
-                            linePixelWidth += TextWidth(line);
-                        }
-                        else
-                        {
-                            int cursor = 0;
-                            float x = 0f;
-
-                            var bracketLevels = new Dictionary<int, int>();
-                            int nesting = 0;
-                            for (int col = 0; col < line.Length; col++)
-                            {
-                                char ch = line[col];
-                                if (ch is '(' or '[' or '{') { bracketLevels[col] = nesting; nesting++; }
-                                else if (ch is ')' or ']' or '}') { nesting = Math.Max(0, nesting - 1); bracketLevels[col] = nesting; }
-                            }
-
-                            foreach (var tok in tokenList)
-                            {
-                                if (tok.Start > cursor)
+                                uint indentCol = ImGui.GetColorU32(_colIndentGuide);
+                                float guideXStep = TabSize * _charAdvance;
+                                for (int lvl = 0; lvl < indentLevels; lvl++)
                                 {
-                                    int lenPlain = Math.Min(tok.Start - cursor, line.Length - cursor);
-                                    if (lenPlain > 0)
-                                    {
-                                        string plain = line.Substring(cursor, lenPlain);
-                                        drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(_colDefault), plain);
-                                        x += ImGui.CalcTextSize(plain).X;
-                                    }
+                                    float xStepped = linePos.X + (lvl + 0.5f) * guideXStep;
+                                    drawList.AddLine(new Vector2(xStepped, linePos.Y),
+                                                     new Vector2(xStepped, linePos.Y + lineSpacing),
+                                                     indentCol, 1.0f);
+                                }
+                            }
+
+                            if (HasSelection && lineIndex >= selStartLine && lineIndex <= selEndLine)
+                            {
+                                int lineLen = line.Length;
+                                int startCol, endCol;
+
+                                if (selStartLine == selEndLine) { startCol = selStartCol; endCol = selEndCol; }
+                                else if (lineIndex == selStartLine) { startCol = selStartCol; endCol = lineLen; }
+                                else if (lineIndex == selEndLine) { startCol = 0; endCol = selEndCol; }
+                                else { startCol = 0; endCol = lineLen; }
+
+                                startCol = Math.Clamp(startCol, 0, lineLen);
+                                endCol = Math.Clamp(endCol, 0, lineLen);
+
+                                if (endCol > startCol)
+                                {
+                                    float x1 = linePos.X + MeasurePrefixWidth(line, startCol, tokenList);
+                                    float x2 = linePos.X + MeasurePrefixWidth(line, endCol, tokenList);
+                                    x1 = Px(MathF.Floor(x1) - 1f) - SELECTION_PAD;
+                                    x2 = Px(MathF.Ceiling(x2) + 1f) + SELECTION_PAD;
+                                    drawList.AddRectFilled(new Vector2(x1, linePos.Y),
+                                                           new Vector2(x2, linePos.Y + _lineHeight),
+                                                           ImGui.GetColorU32(_colSelection));
+                                }
+                            }
+
+                            if (lineIndex == _searchResultLine && _searchResultCol >= 0 && !string.IsNullOrEmpty(_findText))
+                            {
+                                int matchLen = Math.Min(_findText.Length, line.Length - _searchResultCol);
+                                if (matchLen > 0)
+                                {
+                                    float xStart = linePos.X + MeasurePrefixWidth(line, _searchResultCol, tokenList);
+                                    float xEnd = linePos.X + MeasurePrefixWidth(line, _searchResultCol + matchLen, tokenList);
+                                    drawList.AddRectFilled(new Vector2(xStart, linePos.Y),
+                                                           new Vector2(xEnd, linePos.Y + _lineHeight),
+                                                           ImGui.GetColorU32(new Vector4(0.8f, 0.4f, 0.2f, 0.45f)));
+                                }
+                            }
+
+                            if (_hasFocus && lineIndex == _cursorLine)
+                            {
+                                int caretColIndex = Math.Clamp(_cursorColumn, 0, line.Length);
+                                float xCaret = MeasurePrefixWidth(line, caretColIndex, tokenList);
+                                float caretX = Px(linePos.X + xCaret);
+                                _caretScreenPos = new Vector2(caretX, linePos.Y + _lineHeight);
+
+                                if (((long)(ImGui.GetTime() / 0.53) % 2) == 0)
+                                {
+                                    drawList.AddRectFilled(new Vector2(caretX, linePos.Y),
+                                                           new Vector2(caretX + 1.0f, linePos.Y + _lineHeight),
+                                                           ImGui.GetColorU32(_colCaret));
                                 }
 
-                                if (tok.Start >= line.Length) { cursor = line.Length; break; }
-
-                                int maxLen = line.Length - tok.Start;
-                                int tokLen = Math.Min(tok.Length, maxLen);
-                                if (tokLen <= 0) { cursor = tok.Start; continue; }
-
-                                string tokenText = line.Substring(tok.Start, tokLen);
-                                if (tokenText.Length > 0)
+                                if (!string.IsNullOrEmpty(_inlineSuggestion) &&
+                                    _inlineSuggestionLine == lineIndex &&
+                                    _inlineSuggestionColumn == _cursorColumn)
                                 {
-                                    var col = tok.Type switch
-                                    {
-                                        TokenType.Keyword => _colKeyword,
-                                        TokenType.Builtin => _colBuiltin,
-                                        TokenType.Method => _colMethod,
-                                        TokenType.Number => _colNumber,
-                                        TokenType.String => _colString,
-                                        TokenType.Comment => _colComment,
-                                        TokenType.Operator => _colOperator,
-                                        TokenType.Field => _colField,
-                                        _ => _colDefault
-                                    };
+                                    var ghostCol = _colDefault; ghostCol.W *= 0.35f;
+                                    drawList.AddText(new Vector2(caretX, linePos.Y), ImGui.GetColorU32(ghostCol), _inlineSuggestion);
+                                }
+                            }
 
-                                    if (tok.Type == TokenType.Operator && tokenText.Length == 1)
+                            float linePixelWidth = gutterWidth;
+                            if (tokenList == null || tokenList.Count == 0)
+                            {
+                                if (line.Length > 0)
+                                    drawList.AddText(linePos, ImGui.GetColorU32(_colDefault), line);
+                                linePixelWidth += TextWidth(line);
+                            }
+                            else
+                            {
+                                int cursor = 0;
+                                float x = 0f;
+
+                                var bracketLevels = new Dictionary<int, int>();
+                                int nesting = 0;
+                                for (int col = 0; col < line.Length; col++)
+                                {
+                                    char ch = line[col];
+                                    if (ch is '(' or '[' or '{') { bracketLevels[col] = nesting; nesting++; }
+                                    else if (ch is ')' or ']' or '}') { nesting = Math.Max(0, nesting - 1); bracketLevels[col] = nesting; }
+                                }
+
+                                foreach (var tok in tokenList)
+                                {
+                                    if (tok.Start > cursor)
                                     {
-                                        char ch = tokenText[0];
-                                        if ((ch is '(' or ')' or '[' or ']' or '{' or '}') &&
-                                            bracketLevels.TryGetValue(tok.Start, out int level) && _bracketColors.Length > 0)
+                                        int lenPlain = Math.Min(tok.Start - cursor, line.Length - cursor);
+                                        if (lenPlain > 0)
                                         {
-                                            col = _bracketColors[level % _bracketColors.Length];
+                                            string plain = line.Substring(cursor, lenPlain);
+                                            drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(_colDefault), plain);
+                                            x += ImGui.CalcTextSize(plain).X;
                                         }
                                     }
 
-                                    drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(col), tokenText);
-                                    x += ImGui.CalcTextSize(tokenText).X;
+                                    if (tok.Start >= line.Length) { cursor = line.Length; break; }
+
+                                    int maxLen = line.Length - tok.Start;
+                                    int tokLen = Math.Min(tok.Length, maxLen);
+                                    if (tokLen <= 0) { cursor = tok.Start; continue; }
+
+                                    string tokenText = line.Substring(tok.Start, tokLen);
+                                    if (tokenText.Length > 0)
+                                    {
+                                        var col = tok.Type switch
+                                        {
+                                            TokenType.Keyword => _colKeyword,
+                                            TokenType.Builtin => _colBuiltin,
+                                            TokenType.Method => _colMethod,
+                                            TokenType.Number => _colNumber,
+                                            TokenType.String => _colString,
+                                            TokenType.Comment => _colComment,
+                                            TokenType.Operator => _colOperator,
+                                            TokenType.Field => _colField,
+                                            _ => _colDefault
+                                        };
+
+                                        if (tok.Type == TokenType.Operator && tokenText.Length == 1)
+                                        {
+                                            char ch = tokenText[0];
+                                            if ((ch is '(' or ')' or '[' or ']' or '{' or '}') &&
+                                                bracketLevels.TryGetValue(tok.Start, out int level) && _bracketColors.Length > 0)
+                                            {
+                                                col = _bracketColors[level % _bracketColors.Length];
+                                            }
+                                        }
+
+                                        drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(col), tokenText);
+                                        x += ImGui.CalcTextSize(tokenText).X;
+                                    }
+
+                                    cursor = tok.Start + tokLen;
                                 }
 
-                                cursor = tok.Start + tokLen;
+                                if (cursor < line.Length)
+                                {
+                                    string tail = line[cursor..];
+                                    drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(_colDefault), tail);
+                                    x += ImGui.CalcTextSize(tail).X;
+                                }
+
+                                linePixelWidth += x;
                             }
 
-                            if (cursor < line.Length)
-                            {
-                                string tail = line[cursor..];
-                                drawList.AddText(linePos + new Vector2(x, 0), ImGui.GetColorU32(_colDefault), tail);
-                                x += ImGui.CalcTextSize(tail).X;
-                            }
-
-                            linePixelWidth += x;
+                            if (linePixelWidth > maxLinePixelWidth) maxLinePixelWidth = linePixelWidth;
                         }
-
-                        if (linePixelWidth > maxLinePixelWidth) maxLinePixelWidth = linePixelWidth;
                     }
                 }
-
-                try { clipper.End(); }
-                catch { clipper.Destroy(); }
+                finally
+                {
+                    try { clipper.End(); }
+                    catch { clipper.Destroy(); }
+                }
             }
 
             if (lastVisible >= firstVisible)

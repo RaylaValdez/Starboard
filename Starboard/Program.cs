@@ -63,7 +63,7 @@ internal static class Program
         //Logger.Info("Starboard starting...");
         _animClock.Start();
 
-        IntPtr rawHwnd = FindProcess.WaitForMainWindow("StarCitizen", retries: 40, delayMs: 500);
+        IntPtr rawHwnd = FindProcess.WaitForMainWindow("Notepad", retries: 40, delayMs: 500);
         if (rawHwnd == IntPtr.Zero)
         {
             Logger.Error("Could not find StarCitizen main window. Exiting.");
@@ -126,8 +126,8 @@ internal static class Program
                             }
                         }
 
-                        using var bmp = svgDoc.Draw(32, 32);
-                        return imguiRenderer.CreateTextureFromBitmap(bmp, out _, out _);
+                        using var bmp = svgDoc.Draw(size, size);
+                        return imguiRenderer.CreateTextureFromBitmap(bmp, out _, out _, pointSampling: true);
                     }
                     else
                     {
@@ -302,7 +302,7 @@ internal static class Program
             FaviconManager.ProcessPendingUploads();
 
             d3dHost.BeginFrame();
-            ImGuiRendererD3D11.NewFrame(overlay.ClientWidth, overlay.ClientHeight);
+            imguiRenderer.NewFrame(overlay.ClientWidth, overlay.ClientHeight);
 
             ImGuiInput.UpdateMouse(overlay);
             ImGuiInput.UpdateKeyboard();

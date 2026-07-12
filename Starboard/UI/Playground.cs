@@ -81,7 +81,7 @@ namespace Starboard.UI
 
         public static void Draw(float dt)
         {
-            bool logicalMobiOpen = Helpers.CheckMobiglassOpen();
+            bool logicalMobiOpen = Helpers.CheckMobiglassOpen(dt);
 
             if (!logicalMobiOpen && _mobiOpenLastFrame)
             {

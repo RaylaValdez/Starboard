@@ -14,6 +14,12 @@ namespace Starboard.Lua
     [MoonSharpUserData]
     internal class LuaUiApi
     {
+        // TODO FIX THIS — every begin_* method (begin_window, begin_popup, begin_menu, etc.)
+        // exposes a paired ImGui API to Lua. If a Lua script throws between begin_X and end_X,
+        // the ImGui stack corrupts permanently for the frame. Options:
+        //   - Snapshot stack depth before calling Lua Draw(), unwind on error
+        //   - Provide higher-level wrappers (e.g. ui.window(title, func)) that guarantee pairing
+        //   - Track all begin calls per-applet and auto-end on exception
 
         /// <summary>ui.add_hitregions() – Add the current ImGui window’s hit regions for this applet.</summary>
         public static void add_hitregions() => HitTestRegions.AddCurrentWindow();
@@ -631,80 +637,10 @@ namespace Starboard.Lua
             return tbl;
         }
 
-        /// <summary>ui.create_context() – Create an ImGui context and return its pointer as number.</summary>
-        public static double create_context()
-        {
-            var ptr = ImGui.CreateContext();
-            return (double)ptr;
-        }
-
-        /// <summary>ui.debug_check_version_and_data_layout() – Run Dear ImGui internal version/layout check (if available in your build).</summary>
-        public static void debug_check_version_and_data_layout()
-        {
-            // Many ImGui.NET builds run this internally; no-op here to avoid signature mismatches.
-            // Intentionally left empty to keep API parity without risking compile errors.
-        }
-
-        /// <summary>ui.debug_flash_style_color(idx, duration?) – Flash a style color for debugging.</summary>
-        public static void debug_flash_style_color(ScriptExecutionContext ctx, CallbackArguments args)
-        {
-            int idx = args.Count > 0 && args[0].Type == DataType.Number ? (int)args[0].Number : 0;
-            // Duration overload may not exist in all builds; stick to the safest one-arg call.
-            ImGui.DebugFlashStyleColor((ImGuiCol)idx);
-        }
-
-        /// <summary>ui.debug_log(text) – Append text to Dear ImGui debug log.</summary>
-        public static void debug_log(string? text)
-        {
-            ImGui.DebugLog(text ?? string.Empty);
-        }
-
-        /// <summary>ui.debug_start_item_picker() – Start the item picker (press key to select an item).</summary>
-        public static void debug_start_item_picker()
-        {
-            ImGui.DebugStartItemPicker();
-        }
-
-        /// <summary>ui.debug_text_encoding(text) – Debug print string encoding diagnostics.</summary>
-        public static void debug_text_encoding(string? text)
-        {
-            ImGui.DebugTextEncoding(text ?? string.Empty);
-        }
-
-        /// <summary>ui.destroy_context(ctx_ptr?) – Destroy the current or specified ImGui context.</summary>
-        public static void destroy_context(ScriptExecutionContext ctx, CallbackArguments args)
-        {
-            if (args.Count > 0 && args[0].Type == DataType.Number)
-                ImGui.DestroyContext((nint)(long)args[0].Number);
-            else
-                ImGui.DestroyContext();
-        }
-
-        /// <summary>ui.destroy_platform_windows() – Destroy platform windows (multi-viewport).</summary>
-        public static void destroy_platform_windows()
-        {
-            ImGui.DestroyPlatformWindows();
-        }
-
-        /// <summary>ui.dock_space(id, w?, h?, flags?) – Create a dockspace node and return its id.</summary>
-        public static double dock_space(ScriptExecutionContext ctx, CallbackArguments args)
-        {
-            uint id = args.Count > 0 && args[0].Type == DataType.Number ? (uint)args[0].Number : 0u;
-            float w = args.Count > 1 && args[1].Type == DataType.Number ? (float)args[1].Number : 0f;
-            float h = args.Count > 2 && args[2].Type == DataType.Number ? (float)args[2].Number : 0f;
-            ImGuiDockNodeFlags flags = args.Count > 3 && args[3].Type == DataType.Number ? (ImGuiDockNodeFlags)(int)args[3].Number : ImGuiDockNodeFlags.None;
-            var outId = ImGui.DockSpace(id, new Vector2(w, h), flags);
-            return outId;
-        }
-
-        /// <summary>ui.dock_space_over_viewport(flags?) – Create a dockspace over the main viewport and return its id.</summary>
-        public static double dock_space_over_viewport(ScriptExecutionContext ctx, CallbackArguments args, uint dsId)
-        {
-            ImGuiDockNodeFlags flags = args.Count > 0 && args[0].Type == DataType.Number ? (ImGuiDockNodeFlags)(int)args[0].Number : ImGuiDockNodeFlags.None;
-            var vp = ImGui.GetMainViewport();
-            var id = ImGui.DockSpaceOverViewport(dsId, vp, flags);
-            return id;
-        }
+        // NOTE: create_context, destroy_context, destroy_platform_windows,
+        // dock_space, and dock_space_over_viewport are intentionally excluded
+        // from the Lua API. They can destabilize the host ImGui context.
+        // If a use case arises, add them back with proper guard rails.
 
         /// <summary>ui.drag_float(label, value, speed, min, max, format?) -> { changed, value } – Drag float widget with optional limits and format.</summary>
         public static DynValue drag_float(ScriptExecutionContext ctx, CallbackArguments args)

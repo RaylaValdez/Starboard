@@ -58,8 +58,6 @@ internal static class FirstStartWindow
         _orbiRegFont = font;
         _orbiRegFontSmall = smallFont;
 
-        StarboardSettingsStore.Load();
-
         _openMobiglassVk = StarboardSettingsStore.Current.OpenMobiglassKeybindVk;
         _openMobiglassImGui = StarboardSettingsStore.Current.OpenMobiglassKeybind;
 

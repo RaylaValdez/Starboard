@@ -9,20 +9,28 @@ namespace Starboard
     /// </summary>
     public static class Helpers
     {
-        private static bool _mobiglassOpen = false;
+        private enum MobiState { Closed, Opening, Open, Closing }
+        private static MobiState _mobiState = MobiState.Closed;
+        private static float _stateTimer = 0f;
+
+        private static bool _prevAnyMobiKeyDown = false;
+        private static bool _prevEscapeDown = false;
+
+        private const float DebounceSeconds = 0.15f;
 
         /// <summary>
-        /// Mediocre Mobiglass logic
+        /// State-machine based Mobiglass detection.
+        /// Uses raw IsKeyDown (hardware state) instead of IsKeyPressed (queued events)
+        /// so frame drops won't cause missed or duplicated toggles.
         /// </summary>
-        /// <returns>bool</returns>
-        public static bool CheckMobiglassOpen()
+        public static bool CheckMobiglassOpen(float dt)
         {
             var settings = StarboardSettingsStore.Current;
 
-            bool keyboardToggle =
-                ImGui.IsKeyPressed(settings.OpenMobiglassKeybind, false) ||
-                ImGui.IsKeyPressed(settings.OpenMobiMapKeybind, false) ||
-                ImGui.IsKeyPressed(settings.OpenMobiCommsKeybind, false);
+            bool anyMobiKeyDown =
+                ImGui.IsKeyDown(settings.OpenMobiglassKeybind) ||
+                ImGui.IsKeyDown(settings.OpenMobiMapKeybind) ||
+                ImGui.IsKeyDown(settings.OpenMobiCommsKeybind);
 
             bool controllerToggle = false;
             while (ControllerInput.TryGetNextButtonPress(out var btn))
@@ -34,20 +42,58 @@ namespace Starboard
                     controllerToggle = true;
                 }
             }
+            if (controllerToggle)
+                anyMobiKeyDown = true;
 
-            bool escapePressed = ImGui.IsKeyPressed(ImGuiKey.Escape, false);
+            bool keyJustPressed = anyMobiKeyDown && !_prevAnyMobiKeyDown;
+            _prevAnyMobiKeyDown = anyMobiKeyDown;
 
-            if (keyboardToggle || controllerToggle)
+            bool escapeDown = ImGui.IsKeyDown(ImGuiKey.Escape);
+            bool escapeJustPressed = escapeDown && !_prevEscapeDown;
+            _prevEscapeDown = escapeDown;
+
+            switch (_mobiState)
             {
-                _mobiglassOpen = !_mobiglassOpen;
+                case MobiState.Closed:
+                    if (keyJustPressed)
+                    {
+                        _mobiState = MobiState.Opening;
+                        _stateTimer = 0f;
+                    }
+                    break;
+
+                case MobiState.Opening:
+                    _stateTimer += dt;
+                    if (escapeJustPressed)
+                        _mobiState = MobiState.Closed;
+                    else if (keyJustPressed)
+                        _mobiState = MobiState.Closed;
+                    else if (_stateTimer >= DebounceSeconds)
+                        _mobiState = MobiState.Open;
+                    break;
+
+                case MobiState.Open:
+                    if (keyJustPressed)
+                    {
+                        _mobiState = MobiState.Closing;
+                        _stateTimer = 0f;
+                    }
+                    else if (escapeJustPressed)
+                        _mobiState = MobiState.Closed;
+                    break;
+
+                case MobiState.Closing:
+                    _stateTimer += dt;
+                    if (escapeJustPressed)
+                        _mobiState = MobiState.Closed;
+                    else if (keyJustPressed)
+                        _mobiState = MobiState.Open;
+                    else if (_stateTimer >= DebounceSeconds)
+                        _mobiState = MobiState.Closed;
+                    break;
             }
 
-            if (escapePressed)
-            {
-                _mobiglassOpen = false;
-            }
-
-            return _mobiglassOpen;
+            return _mobiState == MobiState.Open || _mobiState == MobiState.Opening;
         }
 
         /// <summary>
@@ -55,7 +101,10 @@ namespace Starboard
         /// </summary>
         public static void ForceCloseMobiglass()
         {
-            _mobiglassOpen = false;
+            _mobiState = MobiState.Closed;
+            _stateTimer = 0f;
+            _prevAnyMobiKeyDown = false;
+            _prevEscapeDown = false;
         }
 
         private static bool MatchesAnyControllerBinding(

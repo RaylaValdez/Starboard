@@ -135,12 +135,7 @@ namespace Starboard.DistributedApplets
             {
                 if (ImGui.IsKeyPressed(ImGuiKey.N, false))
                 {
-                    NewFileTab();
-                }
-
-                if (io.KeyShift && ImGui.IsKeyPressed(ImGuiKey.N, false))
-                {
-                    NewFileTab();
+                    NewFileTab(io.KeyShift);
                 }
 
                 if (ImGui.IsKeyPressed(ImGuiKey.W, false))

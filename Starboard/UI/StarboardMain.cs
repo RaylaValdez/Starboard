@@ -469,7 +469,8 @@ namespace Starboard.UI
             if (StarboardSettingsStore.Current.ShowFPS)
             {
                 ImGui.SameLine();
-                ImGui.Text($" FPS: {ImGui.GetIO().Framerate:F0}"); // FPS Counter, if you feel so inclined.
+                ImGui.Text($" FPS: {ImGui.GetIO().Framerate:F0}"); // FPS Counter, if you feel so inclined.           
+                
             }
 
 

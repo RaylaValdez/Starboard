@@ -13,7 +13,7 @@ namespace Starboard.Lua
 
         public static Script CreateScript()
         {
-            var script = new Script(CoreModules.Preset_SoftSandbox);
+            var script = new Script(CoreModules.Preset_HardSandbox);
 
             script.Options.DebugPrint = s => Logger.Info($"[Lua] {s}");
 

@@ -130,6 +130,9 @@ namespace Starboard.Lua
                 var fn = appTable.Get("draw");
                 if (fn.Type == DataType.Function)
                 {
+                    // TODO FIX THIS — if the Lua script calls ui.begin_window (or any begin_*)
+                    // and then throws before the matching end_*, the ImGui stack becomes corrupted
+                    // for the rest of the frame. Need to snapshot stack depth and unwind on error.
                     _script.Call(fn, dt, (double)availablesize.X, (double)availablesize.Y);
                 }
 
