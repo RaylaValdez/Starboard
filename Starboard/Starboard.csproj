@@ -17,6 +17,10 @@
 
     <Authors>RaylaValdez</Authors>
     <Company>Triquetra</Company>
+
+    <Version>0.3.0</Version>
+    <AssemblyVersion>0.3.0.0</AssemblyVersion>
+    <FileVersion>0.3.0.0</FileVersion>
     <Description>Starboard is a transparent, topmost, click-through overlay that renders a single ImGui frame on top of Star Citizen. It lets devs build external applets that render inside a predefined ImGui child. Because it’s non-embedded and process-agnostic, it stays anti-cheat friendly.</Description>
 
     <!-- Package/Repo metadata -->
